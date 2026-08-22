@@ -176,6 +176,55 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* Dev Login */}
+          <div className="mt-6 border-t border-gray-100 pt-5">
+            <p className="mb-3 text-center text-xs font-medium text-gray-400">
+              Dev Access (No Backend Required)
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  authLogin(
+                    {
+                      id: 'dev-emp-001',
+                      email: 'john.doe@dayflow.com',
+                      name: 'John Doe',
+                      role: 'EMPLOYEE',
+                      employeeId: 'EMP-001',
+                      mustChangePassword: false,
+                    },
+                    'dev-token-employee'
+                  );
+                  navigate('/employee/dashboard', { replace: true });
+                }}
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              >
+                Dev Login (Employee)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  authLogin(
+                    {
+                      id: 'dev-admin-001',
+                      email: 'admin@dayflow.com',
+                      name: 'Admin User',
+                      role: 'ADMIN',
+                      employeeId: 'ADM-001',
+                      mustChangePassword: false,
+                    },
+                    'dev-token-admin'
+                  );
+                  navigate('/admin/dashboard', { replace: true });
+                }}
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+              >
+                Dev Login (Admin)
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Sign Up Link */}
