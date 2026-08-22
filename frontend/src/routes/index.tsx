@@ -16,6 +16,7 @@ import AdminTimeOffPage from '@/pages/admin/timeoff/AdminTimeOffPage';
 import AdminPayrollPage from '@/pages/admin/payroll/AdminPayrollPage';
 import AdminNotificationsPage from '@/pages/admin/notifications/AdminNotificationsPage';
 import AdminSettingsPage from '@/pages/admin/settings/AdminSettingsPage';
+import AdminProfilePage from '@/pages/admin/profile/AdminProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import {
   EmployeeDashboard,
@@ -107,6 +108,7 @@ export const router = createBrowserRouter([
       { path: 'payroll', element: <AdminPayrollPage /> },
       { path: 'notifications', element: <AdminNotificationsPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
+      { path: 'profile', element: <AdminProfilePage /> },
     ],
   },
   {
