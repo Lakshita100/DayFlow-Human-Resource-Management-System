@@ -41,7 +41,9 @@ describe('requireAuth middleware', () => {
     vi.mocked(userRepository.findById).mockResolvedValue({
       id: TEST_USERS.admin.id,
       email: TEST_USERS.admin.email,
+      loginId: TEST_USERS.admin.loginId,
       role: TEST_USERS.admin.role,
+      companyId: TEST_USERS.admin.companyId,
       isActive: true,
       mustChangePassword: false,
     } as any);
@@ -100,7 +102,9 @@ describe('requireAuth middleware', () => {
     vi.mocked(userRepository.findById).mockResolvedValue({
       id: TEST_USERS.admin.id,
       email: TEST_USERS.admin.email,
+      loginId: TEST_USERS.admin.loginId,
       role: TEST_USERS.admin.role,
+      companyId: TEST_USERS.admin.companyId,
       isActive: false,
       mustChangePassword: false,
     } as any);

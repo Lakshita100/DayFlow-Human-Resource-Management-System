@@ -62,7 +62,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.admin.id,
         email: TEST_USERS.admin.email,
+        loginId: TEST_USERS.admin.loginId,
         role: TEST_USERS.admin.role,
+        companyId: TEST_USERS.admin.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -80,7 +82,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.hr.id,
         email: TEST_USERS.hr.email,
+        loginId: TEST_USERS.hr.loginId,
         role: TEST_USERS.hr.role,
+        companyId: TEST_USERS.hr.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -98,7 +102,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.employee1.id,
         email: TEST_USERS.employee1.email,
+        loginId: TEST_USERS.employee1.loginId,
         role: TEST_USERS.employee1.role,
+        companyId: TEST_USERS.employee1.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -116,7 +122,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.hr.id,
         email: TEST_USERS.hr.email,
+        loginId: TEST_USERS.hr.loginId,
         role: TEST_USERS.hr.role,
+        companyId: TEST_USERS.hr.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -134,7 +142,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.employee1.id,
         email: TEST_USERS.employee1.email,
+        loginId: TEST_USERS.employee1.loginId,
         role: TEST_USERS.employee1.role,
+        companyId: TEST_USERS.employee1.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -154,7 +164,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.employee1.id,
         email: TEST_USERS.employee1.email,
+        loginId: TEST_USERS.employee1.loginId,
         role: TEST_USERS.employee1.role,
+        companyId: TEST_USERS.employee1.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -172,7 +184,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.employee1.id,
         email: TEST_USERS.employee1.email,
+        loginId: TEST_USERS.employee1.loginId,
         role: TEST_USERS.employee1.role,
+        companyId: TEST_USERS.employee1.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);
@@ -190,7 +204,9 @@ describe('Authorization Integration Tests', () => {
       vi.mocked(userRepository.findById).mockResolvedValue({
         id: TEST_USERS.admin.id,
         email: TEST_USERS.admin.email,
+        loginId: TEST_USERS.admin.loginId,
         role: TEST_USERS.admin.role,
+        companyId: TEST_USERS.admin.companyId,
         isActive: true,
         mustChangePassword: false,
       } as any);

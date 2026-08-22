@@ -45,26 +45,46 @@ enum LeaveStatus {
 // MODELS
 // ============================================
 
+model Company {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  prefix       String         @unique
+  logoUrl      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  employees    Employee[]
+  users        User[]
+  yearlySerials YearlySerial[]
+}
+
 model User {
   id                 String   @id @default(uuid())
+  loginId            String   @unique @default("")
   email              String   @unique
   passwordHash       String
   role               Role     @default(EMPLOYEE)
+  companyId          String?
   mustChangePassword Boolean  @default(true)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  company       Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
   employee      Employee?
   notifications Notification[]
 
+  @@index([loginId])
   @@index([email])
+  @@index([companyId])
+  @@index([companyId, email])
 }
 
 model Employee {
   id             String         @id @default(uuid())
   employeeId     String         @unique
   userId         String         @unique
+  companyId      String?
   firstName      String
   lastName       String
   phone          String?
@@ -76,17 +96,30 @@ model Employee {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  privateInfo      EmployeePrivateInfo?
-  skills           EmployeeSkill[]
-  documents        EmployeeDocument[]
-  attendance       Attendance[]
-  timeOffRequests  TimeOff[]
+  company        Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privateInfo    EmployeePrivateInfo?
+  skills         EmployeeSkill[]
+  documents      EmployeeDocument[]
+  attendance     Attendance[]
+  timeOffRequests TimeOff[]
   leaveAllocations LeaveAllocation[]
-  salaryStructure  SalaryStructure?
+  salaryStructure SalaryStructure?
 
   @@index([employeeId])
   @@index([userId])
+  @@index([companyId])
+}
+
+model YearlySerial {
+  id        String @id @default(uuid())
+  companyId String
+  year      Int
+  lastSerial Int   @default(0)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year])
 }
 
 model EmployeePrivateInfo {
