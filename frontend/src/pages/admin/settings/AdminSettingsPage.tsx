@@ -1,16 +1,45 @@
-import { useState } from 'react';
-import { User, Shield, Bell, Palette, Save } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { User, Shield, Bell, Palette, Save, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
 import PageContainer from '@/components/layout/PageContainer';
 import { useAuth } from '@/hooks/useAuth';
+import Avatar from '@/components/ui/Avatar';
+import ChangePhotoModal from '../profile/ChangePhotoModal';
+import { mockAdminProfile } from '@/data/adminProfileMock';
 
-function getInitials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-}
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 export default function AdminSettingsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'appearance'>('profile');
-  const [saved, setSaved] = useState(false);
+
+  // Profile Form & Photo State
+  const [formData, setFormData] = useState({
+    name: user?.name ?? mockAdminProfile.name,
+    mobile: mockAdminProfile.mobile,
+    location: mockAdminProfile.location,
+  });
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(mockAdminProfile.avatar);
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Security tab state
+  const [securitySaved, setSecuritySaved] = useState(false);
+  const [notifSaved, setNotifSaved] = useState(false);
+  const [appSaved, setAppSaved] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const tabs = [
     { key: 'profile' as const, label: 'Profile', icon: User },
@@ -19,10 +48,66 @@ export default function AdminSettingsPage() {
     { key: 'appearance' as const, label: 'Appearance', icon: Palette },
   ];
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  // Photo handlers
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setToast({ type: 'error', message: 'Please select a JPG, PNG, or WEBP image.' });
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setToast({ type: 'error', message: 'Image must be smaller than 5 MB.' });
+      return;
+    }
+    setPendingUrl(URL.createObjectURL(file));
+    setPhotoModalOpen(true);
+  }, []);
+
+  const handleSavePhoto = useCallback(() => {
+    if (!pendingUrl) return;
+    setSavingPhoto(true);
+    setTimeout(() => {
+      URL.revokeObjectURL(pendingUrl);
+      setAvatarUrl(pendingUrl);
+      setSavingPhoto(false);
+      setPhotoModalOpen(false);
+      setPendingUrl(null);
+      setToast({ type: 'success', message: 'Profile photo updated successfully.' });
+    }, 800);
+  }, [pendingUrl]);
+
+  const handleCancelPhoto = useCallback(() => {
+    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+    setPhotoModalOpen(false);
+    setPendingUrl(null);
+  }, [pendingUrl]);
+
+  // Profile save handler
+  const handleSaveProfile = () => {
+    setSavingProfile(true);
+    setTimeout(() => {
+      setSavingProfile(false);
+      setToast({ type: 'success', message: 'Profile information saved successfully.' });
+    }, 600);
+  };
+
+  const handleSecuritySave = () => {
+    setSecuritySaved(true);
+    setTimeout(() => setSecuritySaved(false), 2000);
+  };
+
+  const handleNotifSave = () => {
+    setNotifSaved(true);
+    setTimeout(() => setNotifSaved(false), 2000);
+  };
+
+  const handleAppSave = () => {
+    setAppSaved(true);
+    setTimeout(() => setAppSaved(false), 2000);
+  };
 
   return (
     <PageContainer>
@@ -33,6 +118,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Settings Tab Navigation */}
           <div className="w-full shrink-0 lg:w-56">
             <nav className="flex gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1.5 shadow-card lg:flex-col scrollbar-none">
               {tabs.map((tab) => {
@@ -55,47 +141,159 @@ export default function AdminSettingsPage() {
             </nav>
           </div>
 
+          {/* Tab Content */}
           <div className="flex-1 min-w-0">
+            {/* PROFILE TAB */}
             {activeTab === 'profile' && (
               <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
                 <h3 className="mb-6 text-base font-semibold text-gray-900">Profile Information</h3>
-                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mb-6 text-center sm:text-left">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-700">
-                    {user ? getInitials(user.name) : 'U'}
+
+                {/* Avatar & Photo Upload Section */}
+                <div className="flex flex-col sm:flex-row items-center gap-5 mb-8 pb-6 border-b border-gray-100 text-center sm:text-left">
+                  <div className="relative group shrink-0">
+                    <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+                      <Avatar
+                        src={avatarUrl}
+                        name={formData.name}
+                        className="h-full w-full text-xl sm:text-2xl"
+                      />
+                      {/* Change photo overlay button */}
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Change profile photo"
+                        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brand-600 text-white shadow-md transition-colors hover:bg-brand-700"
+                      >
+                        <Camera size={14} />
+                      </button>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      aria-hidden="true"
+                      tabIndex={-1}
+                    />
                   </div>
+
                   <div>
-                    <p className="text-lg font-semibold text-gray-900">{user?.name ?? 'User'}</p>
-                    <p className="text-sm text-gray-500">{user?.email}</p>
-                    <p className="mt-1 text-xs text-gray-400 font-mono">{user?.role} &middot; {user?.employeeId}</p>
+                    <h4 className="text-lg font-bold text-gray-900">{formData.name}</h4>
+                    <p className="text-xs text-gray-500 font-mono mt-0.5">
+                      {user?.loginId || user?.employeeId || mockAdminProfile.loginId} &middot; {user?.role || 'ADMIN'}
+                    </p>
+                    <p className="mt-2 text-xs text-gray-400">
+                      Allowed JPG, PNG, or WEBP. Max size of 5 MB.
+                    </p>
                   </div>
                 </div>
+
+                {/* Profile Form Grid */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-gray-500">Full Name</label>
-                    <input type="text" defaultValue={user?.name ?? ''} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100" />
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Email</label>
-                    <input type="email" defaultValue={user?.email ?? ''} disabled className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed" />
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Login / Employee ID</label>
+                    <input
+                      type="text"
+                      value={user?.loginId || user?.employeeId || mockAdminProfile.loginId}
+                      disabled
+                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 font-mono cursor-not-allowed"
+                    />
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Employee ID</label>
-                    <input type="text" defaultValue={user?.employeeId ?? ''} disabled className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 font-mono cursor-not-allowed" />
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Email Address</label>
+                    <input
+                      type="email"
+                      value={user?.email ?? mockAdminProfile.email}
+                      disabled
+                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Role</label>
-                    <input type="text" defaultValue={user?.role ?? ''} disabled className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed" />
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Mobile Number</label>
+                    <input
+                      type="text"
+                      value={formData.mobile}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, mobile: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Company</label>
+                    <input
+                      type="text"
+                      value={user?.company?.name ?? mockAdminProfile.company}
+                      disabled
+                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Department</label>
+                    <input
+                      type="text"
+                      value={mockAdminProfile.department}
+                      disabled
+                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Manager</label>
+                    <input
+                      type="text"
+                      value={mockAdminProfile.manager ?? 'N/A'}
+                      disabled
+                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-500">Office Location</label>
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
                   </div>
                 </div>
+
                 <div className="mt-6 flex justify-end">
-                  <button onClick={handleSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
-                    <Save size={16} />
-                    {saved ? 'Saved!' : 'Save Changes'}
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-60"
+                  >
+                    {savingProfile ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        Save Changes
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             )}
 
+            {/* SECURITY TAB */}
             {activeTab === 'security' && (
               <div className="space-y-6">
                 <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
@@ -113,15 +311,16 @@ export default function AdminSettingsPage() {
                       <label className="mb-1 block text-xs font-medium text-gray-500">Confirm New Password</label>
                       <input type="password" placeholder="Confirm new password" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100" />
                     </div>
-                    <button onClick={handleSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
+                    <button onClick={handleSecuritySave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
                       <Shield size={16} />
-                      Update Password
+                      {securitySaved ? 'Updated!' : 'Update Password'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* NOTIFICATIONS TAB */}
             {activeTab === 'notifications' && (
               <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
                 <h3 className="mb-4 text-base font-semibold text-gray-900">Notification Preferences</h3>
@@ -146,14 +345,15 @@ export default function AdminSettingsPage() {
                   ))}
                 </div>
                 <div className="mt-6 flex justify-end">
-                  <button onClick={handleSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
+                  <button onClick={handleNotifSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
                     <Save size={16} />
-                    {saved ? 'Saved!' : 'Save Preferences'}
+                    {notifSaved ? 'Saved!' : 'Save Preferences'}
                   </button>
                 </div>
               </div>
             )}
 
+            {/* APPEARANCE TAB */}
             {activeTab === 'appearance' && (
               <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
                 <h3 className="mb-4 text-base font-semibold text-gray-900">Appearance Settings</h3>
@@ -194,9 +394,9 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end">
-                  <button onClick={handleSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
+                  <button onClick={handleAppSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
                     <Save size={16} />
-                    {saved ? 'Saved!' : 'Save Settings'}
+                    {appSaved ? 'Saved!' : 'Save Settings'}
                   </button>
                 </div>
               </div>
@@ -204,6 +404,27 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-2.5 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2">
+          {toast.type === 'success' ? (
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
+          ) : (
+            <AlertCircle size={18} className="shrink-0 text-rose-500" />
+          )}
+          <p className="text-sm text-gray-700 font-medium">{toast.message}</p>
+        </div>
+      )}
+
+      {/* Change Photo Preview Modal */}
+      <ChangePhotoModal
+        open={photoModalOpen}
+        imageUrl={pendingUrl ?? ''}
+        saving={savingPhoto}
+        onCancel={handleCancelPhoto}
+        onSave={handleSavePhoto}
+      />
     </PageContainer>
   );
 }
