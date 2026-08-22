@@ -20,7 +20,12 @@ export async function requireAuth(
       throw createError('Authentication required', 401);
     }
 
-    const decoded = authService.verifyToken(token);
+    let decoded;
+    try {
+      decoded = authService.verifyToken(token);
+    } catch {
+      throw createError('Invalid or expired token', 401);
+    }
 
     const user = await userRepository.findById(decoded.id);
     if (!user) {
