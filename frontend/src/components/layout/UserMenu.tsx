@@ -33,6 +33,18 @@ export default function UserMenu() {
     navigate('/login', { replace: true });
   }
 
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'HR';
+
+  function handleMyProfile() {
+    setOpen(false);
+    navigate(isAdmin ? '/admin/profile' : '/employee/profile');
+  }
+
+  function handleSettings() {
+    setOpen(false);
+    navigate(isAdmin ? '/admin/settings' : '/employee/settings');
+  }
+
   const initials = user ? getInitials(user.name) : 'U';
   const displayName = user?.name ?? 'User';
   const employeeId = user?.employeeId ?? '';
@@ -66,11 +78,17 @@ export default function UserMenu() {
             <p className="text-xs text-gray-500">{email}</p>
           </div>
           <div className="py-1">
-            <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50">
+            <button
+              onClick={handleMyProfile}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+            >
               <User size={16} className="text-gray-400" />
               My Profile
             </button>
-            <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50">
+            <button
+              onClick={handleSettings}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+            >
               <Settings size={16} className="text-gray-400" />
               Settings
             </button>

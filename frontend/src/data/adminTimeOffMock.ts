@@ -1,4 +1,9 @@
-import type { AdminTimeOffRequest } from '@/types/admin-pages.types';
+import type { AdminTimeOffRequest, AdminLeaveBalance } from '@/types/admin-pages.types';
+
+export const mockLeaveBalances: AdminLeaveBalance[] = [
+  { type: 'PAID', label: 'Paid Time Off', available: 24, used: 8, pending: 2, total: 34 },
+  { type: 'SICK', label: 'Sick Time Off', available: 7, used: 3, pending: 0, total: 10 },
+];
 
 export const mockTimeOffRequests: AdminTimeOffRequest[] = [
   { id: '1', employeeId: 'EMP003', employeeName: 'John Doe', department: 'Engineering', designation: 'Software Developer', type: 'SICK', startDate: '22 Aug 2026', endDate: '24 Aug 2026', days: 3, reason: 'Medical appointment and recovery', status: 'PENDING', appliedOn: '20 Aug 2026' },
