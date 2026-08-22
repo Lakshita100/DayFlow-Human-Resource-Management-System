@@ -2,21 +2,27 @@ import { MonthlyOverview as MonthlyOverviewType } from "@/types/attendance.types
 import { TrendingUp } from "lucide-react";
 
 interface MonthlyOverviewCardProps {
-  data: MonthlyOverviewType;
+  data?: Partial<MonthlyOverviewType> | null;
 }
 
 export default function MonthlyOverviewCard({
   data,
 }: MonthlyOverviewCardProps) {
+  const present = data?.present ?? 0;
+  const halfDay = data?.halfDay ?? 0;
+  const absent = data?.absent ?? 0;
+  const leave = data?.leave ?? 0;
+  const weeklyOff = data?.weeklyOff ?? 0;
+
   const stats = [
-    { label: "Present", count: data.present, dot: "bg-emerald-500" },
-    { label: "Half Day", count: data.halfDay, dot: "bg-orange-500" },
-    { label: "Absent", count: data.absent, dot: "bg-red-500" },
-    { label: "Leave", count: data.leave, dot: "bg-blue-500" },
-    { label: "Weekly Off", count: data.weeklyOff, dot: "bg-sky-400" },
+    { label: "Present", count: present, dot: "bg-emerald-500" },
+    { label: "Half Day", count: halfDay, dot: "bg-orange-500" },
+    { label: "Absent", count: absent, dot: "bg-red-500" },
+    { label: "Leave", count: leave, dot: "bg-blue-500" },
+    { label: "Weekly Off", count: weeklyOff, dot: "bg-sky-400" },
   ];
 
-  const percentage = data.attendancePercentage;
+  const percentage = Number(data?.attendancePercentage ?? 0);
   const percentageColor =
     percentage >= 90
       ? "text-emerald-600"
@@ -54,7 +60,7 @@ export default function MonthlyOverviewCard({
         <span className="text-sm text-gray-600">Attendance Percentage</span>
       </div>
       <p className={`text-2xl font-bold ${percentageColor}`}>
-        {percentage.toFixed(2)}%
+        {!isNaN(percentage) ? percentage.toFixed(2) : "0.00"}%
       </p>
     </div>
   );
