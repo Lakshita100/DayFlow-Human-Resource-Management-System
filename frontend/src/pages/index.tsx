@@ -1,4 +1,15 @@
+import { useState, useCallback } from 'react';
+import { Pencil } from 'lucide-react';
 import PageContainer from '@/components/layout/PageContainer';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import PersonalInformationCard from '@/components/profile/PersonalInformationCard';
+import ProfessionalInformationCard from '@/components/profile/ProfessionalInformationCard';
+import PrivateInformationCard from '@/components/profile/PrivateInformationCard';
+import SkillsCard from '@/components/profile/SkillsCard';
+import EditProfileModal from '@/components/profile/EditProfileModal';
+import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
+import { mockEmployeeProfile } from '@/data/mockProfile';
+import type { FullEmployeeProfile, ProfileUpdatePayload } from '@/types/profile.types';
 import DashboardGreeting from '@/components/dashboard/DashboardGreeting';
 import SummaryCards from '@/components/dashboard/SummaryCards';
 import QuickActions from '@/components/dashboard/QuickActions';
@@ -115,7 +126,81 @@ export function AdminDashboard() {
 }
 
 export function ProfilePage() {
-  return <PlaceholderPage title="My Profile" icon="👤" />;
+  const [profile, setProfile] = useState<FullEmployeeProfile>(mockEmployeeProfile);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isLoading] = useState(false);
+
+  const handleSaveProfile = useCallback(async (data: ProfileUpdatePayload) => {
+    setProfile((prev) => ({
+      ...prev,
+      employee: {
+        ...prev.employee,
+        phone: data.phone ?? prev.employee.phone,
+      },
+      personalInfo: {
+        ...prev.personalInfo,
+        address: data.address ?? prev.personalInfo.address,
+        city: data.city ?? prev.personalInfo.city,
+        state: data.state ?? prev.personalInfo.state,
+        zipCode: data.zipCode ?? prev.personalInfo.zipCode,
+        country: data.country ?? prev.personalInfo.country,
+      },
+      privateInfo: {
+        ...prev.privateInfo,
+        emergencyContactName: data.emergencyContactName ?? prev.privateInfo.emergencyContactName,
+        emergencyContactPhone: data.emergencyContactPhone ?? prev.privateInfo.emergencyContactPhone,
+      },
+    }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <ProfileSkeleton />
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+          <button
+            onClick={() => setIsEditOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
+          >
+            <Pencil size={16} />
+            Edit Profile
+          </button>
+        </div>
+
+        <ProfileHeader
+          profile={profile.employee}
+          onEditPhoto={() => {}}
+        />
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <PersonalInformationCard data={profile.personalInfo} />
+          <ProfessionalInformationCard data={profile.employee} />
+        </div>
+
+        <PrivateInformationCard data={profile.privateInfo} />
+
+        <SkillsCard
+          skills={profile.skills}
+          onEdit={() => {}}
+        />
+      </div>
+
+      <EditProfileModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        profile={profile}
+        onSave={handleSaveProfile}
+      />
+    </PageContainer>
+  );
 }
 
 export function EmployeeAttendance() {
