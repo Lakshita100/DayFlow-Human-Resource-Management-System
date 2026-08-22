@@ -1,4 +1,13 @@
-// Backend types will be defined here in Phase 2
-// These will include domain models like Employee, Attendance, TimeOff, etc.
+import { Request } from 'express';
+import { Role } from '@prisma/client';
 
-export {};
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: Role;
+  mustChangePassword: boolean;
+}
+
+export interface AuthRequest extends Request {
+  user?: AuthUser;
+}
