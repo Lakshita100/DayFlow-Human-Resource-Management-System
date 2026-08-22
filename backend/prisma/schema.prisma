@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Phase 1: Infrastructure verification model
+// This model is used only to verify database connectivity
+// It will be removed or extended in Phase 2 with actual HRMS models
+model SystemCheck {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
