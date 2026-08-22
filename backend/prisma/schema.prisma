@@ -223,30 +223,84 @@ model LeaveAllocation {
   @@index([employeeId])
 }
 
-model SalaryStructure {
-  id            String    @id @default(uuid())
-  employeeId    String    @unique
-  effectiveFrom DateTime
-  effectiveTo   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+enum WageType {
+  FIXED
+}
 
-  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  components SalaryComponent[]
+enum CalculationType {
+  FIXED_AMOUNT
+  PERCENTAGE
+}
+
+enum CalculationBasis {
+  WAGE
+  BASIC_SALARY
+  GROSS_SALARY
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model SalaryStructure {
+  id                 String    @id @default(uuid())
+  employeeId         String    @unique
+  wageType           WageType  @default(FIXED)
+  monthlyWage        Decimal   @default(0.00) @db.Decimal(12, 2)
+  workingDaysPerWeek Int       @default(5)
+  breakTimeHours     Decimal   @default(1.00) @db.Decimal(5, 2)
+  effectiveFrom      DateTime  @default(now())
+  effectiveTo        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  components       SalaryComponent[]
+  pfConfiguration  PFConfiguration?
+  taxConfiguration TaxConfiguration?
 }
 
 model SalaryComponent {
-  id                String   @id @default(uuid())
+  id                String           @id @default(uuid())
   salaryStructureId String
+  code              String
   name              String
-  type              String
-  amount            Float
+  calculationType   CalculationType  @default(FIXED_AMOUNT)
+  calculationBasis  CalculationBasis?
+  value             Decimal          @default(0.00) @db.Decimal(12, 2)
+  amount            Decimal          @default(0.00) @db.Decimal(12, 2)
+  isActive          Boolean          @default(true)
+  displayOrder      Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@unique([salaryStructureId, code])
+  @@index([salaryStructureId])
+}
+
+model PFConfiguration {
+  id                String   @id @default(uuid())
+  salaryStructureId String   @unique
+  employeeRate      Decimal  @default(12.00) @db.Decimal(5, 2)
+  employerRate      Decimal  @default(12.00) @db.Decimal(5, 2)
+  isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+}
 
-  @@index([salaryStructureId])
+model TaxConfiguration {
+  id                String   @id @default(uuid())
+  salaryStructureId String   @unique
+  professionalTax   Decimal  @default(200.00) @db.Decimal(12, 2)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
