@@ -10,6 +10,13 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL').default('http://localhost:5173'),
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is missing'),
   JWT_EXPIRES_IN: z.string().default('1d'),
+  STANDARD_WORK_HOURS: z
+    .string()
+    .default('8')
+    .refine((v) => !isNaN(Number(v)) && Number(v) > 0 && Number(v) <= 24, {
+      message: 'STANDARD_WORK_HOURS must be a number between 1 and 24',
+    })
+    .transform(Number),
 });
 
 type EnvConfig = z.infer<typeof envSchema>;
