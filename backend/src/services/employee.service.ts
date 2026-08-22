@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../config/database.js';
 import { employeeRepository } from '../repositories/employee.repository.js';
 import { generateLoginId, generateTemporaryPassword } from '../utils/login-id.js';
