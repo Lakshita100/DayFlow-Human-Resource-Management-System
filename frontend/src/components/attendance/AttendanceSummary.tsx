@@ -1,5 +1,6 @@
 import TodayStatusCard from "./TodayStatusCard";
 import WorkingHoursCard from "./WorkingHoursCard";
+import { useWorkingHours } from "@/hooks/useWorkingHours";
 import { TodayAttendance } from "@/types/attendance.types";
 
 interface AttendanceSummaryProps {
@@ -17,6 +18,8 @@ export default function AttendanceSummary({
   isCheckingIn,
   isCheckingOut,
 }: AttendanceSummaryProps) {
+  const workingHours = useWorkingHours(today);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <TodayStatusCard
@@ -26,7 +29,10 @@ export default function AttendanceSummary({
         isCheckingIn={isCheckingIn}
         isCheckingOut={isCheckingOut}
       />
-      <WorkingHoursCard hours={today.workingHours} />
+      <WorkingHoursCard
+        hours={workingHours}
+        label={today.status === "checked_in" ? "Current session time" : "Total working time"}
+      />
     </div>
   );
 }

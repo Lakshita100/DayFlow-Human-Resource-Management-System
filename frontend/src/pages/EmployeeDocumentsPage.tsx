@@ -90,24 +90,24 @@ export default function EmployeeDocumentsPage() {
 
     // Category filter
     if (selectedCategory !== 'all') {
-      docs = docs.filter((d) => d.category === selectedCategory);
+      docs = docs.filter((d: DocumentRecord) => d.category === selectedCategory);
     }
 
     // Status filter
     if (filters.status !== 'all') {
-      docs = docs.filter((d) => d.status === filters.status);
+      docs = docs.filter((d: DocumentRecord) => d.status === filters.status);
     }
 
     // Expiry filter
     if (filters.expiry !== 'all') {
-      docs = docs.filter((d) => getExpiryStatus(d.expiryDate) === filters.expiry);
+      docs = docs.filter((d: DocumentRecord) => getExpiryStatus(d.expiryDate) === filters.expiry);
     }
 
     // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       docs = docs.filter(
-        (d) =>
+        (d: DocumentRecord) =>
           d.name.toLowerCase().includes(q) ||
           d.category.toLowerCase().includes(q) ||
           d.fileName.toLowerCase().includes(q)
@@ -245,7 +245,7 @@ export default function EmployeeDocumentsPage() {
           />
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredDocuments.map((doc) => (
+            {filteredDocuments.map((doc: DocumentRecord) => (
               <DocumentCard
                 key={doc.id}
                 document={doc}

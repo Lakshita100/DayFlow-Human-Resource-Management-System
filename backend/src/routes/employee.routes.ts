@@ -7,10 +7,12 @@ import {
   updateEmployee,
   updateEmployeeStatus,
   getCompanyStats,
+  uploadAvatarController,
 } from '../controllers/employee.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requireRole } from '../middleware/authorization.middleware.js';
 import { validate } from '../middleware/validation.middleware.js';
+import { uploadAvatar } from '../middleware/upload.middleware.js';
 import {
   createEmployeeSchema,
   updateEmployeeSchema,
@@ -54,6 +56,13 @@ router.post(
   requireRole(Role.ADMIN, Role.HR),
   validate({ body: createEmployeeSchema }),
   createEmployee
+);
+
+router.post(
+  '/:id/avatar',
+  requireRole(Role.ADMIN, Role.HR, Role.EMPLOYEE),
+  uploadAvatar.single('avatar'),
+  uploadAvatarController
 );
 
 router.patch(

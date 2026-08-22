@@ -12,33 +12,31 @@ import type {
   LeaveBalanceSummary,
   UpcomingLeave,
   LeaveRequest,
-  CreateLeavePayload,
 } from '@/types/leave.types';
-
-const USE_MOCK = true;
+import type { CreateLeavePayloadJSON } from '@/services/leave.service';
 
 export function useLeaveBalance() {
   return useQuery<LeaveBalanceSummary>({
     queryKey: ['leave', 'balance'],
     queryFn: () => leaveApi.getLeaveBalance(),
-    enabled: !USE_MOCK,
   });
 }
 
 export function useLeaveBalanceMock(): LeaveBalanceSummary {
-  return mockLeaveBalance;
+  const query = useLeaveBalance();
+  return query.data ?? mockLeaveBalance;
 }
 
-export function useLeaveRequests(params: LeaveQueryParams) {
+export function useLeaveRequests(params?: LeaveQueryParams) {
   return useQuery<LeavePaginatedResponse>({
     queryKey: ['leave', 'requests', params],
     queryFn: () => leaveApi.getLeaveRequests(params),
-    enabled: !USE_MOCK,
   });
 }
 
 export function useLeaveRequestsMock(params: LeaveQueryParams): LeavePaginatedResponse {
-  return getMockLeavePage(params);
+  const query = useLeaveRequests(params);
+  return query.data ?? getMockLeavePage(params);
 }
 
 export function useAllLeaveRequestsMock(): LeaveRequest[] {
@@ -48,8 +46,7 @@ export function useAllLeaveRequestsMock(): LeaveRequest[] {
 export function useUpcomingLeaves() {
   return useQuery<UpcomingLeave[]>({
     queryKey: ['leave', 'upcoming'],
-    queryFn: () => leaveApi.getUpcomingLeaves(),
-    enabled: !USE_MOCK,
+    queryFn: async () => [],
   });
 }
 
@@ -60,17 +57,27 @@ export function useUpcomingLeavesMock(): UpcomingLeave[] {
 export function useCreateLeaveRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateLeavePayload) => leaveApi.createLeaveRequest(payload),
+    mutationFn: (payload: CreateLeavePayloadJSON) => leaveApi.createLeaveRequest(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave'] });
     },
   });
 }
 
-export function useCancelLeaveRequest() {
+export function useApproveLeaveRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => leaveApi.cancelLeaveRequest(id),
+    mutationFn: (id: string) => leaveApi.approveLeaveRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave'] });
+    },
+  });
+}
+
+export function useRejectLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => leaveApi.rejectLeaveRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave'] });
     },

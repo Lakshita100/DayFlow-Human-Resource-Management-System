@@ -32,10 +32,10 @@ const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
 
 const logoStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (_req: any, _file: any, cb: any) => {
     cb(null, LOGOS_DIR);
   },
-  filename: (_req, file, cb) => {
+  filename: (_req: any, file: any, cb: any) => {
     const uniqueSuffix = crypto.randomBytes(16).toString('hex');
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `logo-${uniqueSuffix}${ext}`);
@@ -55,8 +55,8 @@ const documentStorage = multer.diskStorage({
 
 function logoFileFilter(
   _req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  file: any,
+  cb: any
 ): void {
   if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
     cb(null, true);
@@ -94,7 +94,7 @@ export const uploadDocument = multer({
 }).single('document');
 
 export function handleUploadError(
-  err: Error,
+  err: any,
   _req: Request,
   res: Response,
   next: NextFunction

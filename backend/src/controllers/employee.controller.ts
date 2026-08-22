@@ -71,3 +71,15 @@ export const getCompanyStats = asyncHandler(async (req: AuthRequest, res: Respon
   const stats = await employeeService.getCompanyStats(companyId);
   sendSuccess(res, stats);
 });
+
+export const uploadAvatarController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const companyId = req.user!.companyId!;
+  const id = getString(req.params.id);
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Employee ID is required' });
+    return;
+  }
+  const result = await employeeService.updateEmployeeAvatar(id, companyId, req.user!, req.file);
+  sendSuccess(res, result, 'Avatar uploaded successfully');
+});
+

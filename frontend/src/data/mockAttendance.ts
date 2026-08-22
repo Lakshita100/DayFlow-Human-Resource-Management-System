@@ -7,10 +7,10 @@ import type {
 } from '@/types/attendance.types';
 
 export const mockTodayAttendance: TodayAttendance = {
-  status: 'checked_in',
-  checkInTime: '09:15 AM',
+  status: 'not_checked_in',
+  checkInTime: null,
   checkOutTime: null,
-  workingHours: '03h 45m',
+  workingHours: null,
   date: '2026-08-22',
 };
 
@@ -266,6 +266,62 @@ const mockRecords: AttendanceRecord[] = [
     remarks: '-',
   },
 ];
+
+function formatMockTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatMockDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseMockTime(time: string | null, date: Date): number | null {
+  if (!time) return null;
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return null;
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3]?.toUpperCase();
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+  date.setHours(hours, minutes, 0, 0);
+  return date.getTime();
+}
+
+export function simulateMockCheckIn(prev: TodayAttendance | undefined): TodayAttendance {
+  const now = new Date();
+  if (prev && prev.status === 'checked_in') return prev;
+  if (prev && prev.status === 'checked_out') return prev;
+  return {
+    status: 'checked_in',
+    checkInTime: formatMockTime(now),
+    checkOutTime: null,
+    workingHours: '00h 00m',
+    date: formatMockDate(now),
+  };
+}
+
+export function simulateMockCheckOut(prev: TodayAttendance | undefined): TodayAttendance {
+  if (!prev || prev.status !== 'checked_in') return prev ?? mockTodayAttendance;
+  const now = new Date();
+  const startTime = parseMockTime(prev.checkInTime, new Date());
+  let workingHours = prev.workingHours;
+  if (startTime !== null) {
+    const elapsedMinutes = Math.max(0, Math.floor((now.getTime() - startTime) / 60000));
+    workingHours = `${String(Math.floor(elapsedMinutes / 60)).padStart(2, '0')}h ${String(
+      elapsedMinutes % 60
+    ).padStart(2, '0')}m`;
+  }
+  return {
+    ...prev,
+    status: 'checked_out',
+    checkOutTime: formatMockTime(now),
+    workingHours,
+  };
+}
 
 export function getMockAttendancePage(
   page: number,

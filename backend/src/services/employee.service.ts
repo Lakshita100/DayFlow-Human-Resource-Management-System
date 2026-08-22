@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../config/database.js';
 import { employeeRepository } from '../repositories/employee.repository.js';
 import { generateLoginId, generateTemporaryPassword } from '../utils/login-id.js';
@@ -8,110 +8,83 @@ import type { CreateEmployeeInput, UpdateEmployeeInput, EmployeeQueryInput } fro
 const BCRYPT_ROUNDS = 10;
 
 function formatEmployeeList(employee: any) {
-  const user = employee.user;
+  const firstName = employee.firstName || '';
+  const lastName = employee.lastName || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+
   return {
     id: employee.id,
     employeeId: employee.employeeId,
-    userId: employee.userId,
-    loginId: user?.loginId || null,
     firstName: employee.firstName,
     lastName: employee.lastName,
-    name: `${employee.firstName} ${employee.lastName}`,
-    email: user?.email || null,
+    name: fullName || 'Employee',
     phone: employee.phone,
     department: employee.department,
     designation: employee.designation,
-    dateOfJoining: employee.dateOfJoining.toISOString(),
+    dateOfJoining: employee.dateOfJoining,
     employmentType: employee.employmentType,
     status: employee.status,
-    profilePicture: employee.profilePicture || null,
-    isActive: user?.isActive ?? true,
-    createdAt: employee.createdAt.toISOString(),
+    createdAt: employee.createdAt,
+    updatedAt: employee.updatedAt,
+    user: employee.user
+      ? {
+          id: employee.user.id,
+          loginId: employee.user.loginId,
+          email: employee.user.email,
+          role: employee.user.role,
+          isActive: employee.user.isActive,
+        }
+      : undefined,
+    company: employee.company
+      ? {
+          id: employee.company.id,
+          name: employee.company.name,
+          prefix: employee.company.prefix,
+        }
+      : undefined,
   };
 }
 
 function formatEmployeeDetail(employee: any) {
-  const user = employee.user;
-  const company = employee.company;
   return {
-    id: employee.id,
-    employeeId: employee.employeeId,
-    userId: employee.userId,
-    loginId: user?.loginId || null,
-    firstName: employee.firstName,
-    lastName: employee.lastName,
-    name: `${employee.firstName} ${employee.lastName}`,
-    email: user?.email || null,
-    phone: employee.phone,
-    department: employee.department,
-    designation: employee.designation,
-    dateOfJoining: employee.dateOfJoining.toISOString(),
-    employmentType: employee.employmentType,
-    status: employee.status,
-    profilePicture: employee.profilePicture || null,
-    isActive: user?.isActive ?? true,
-    company: company
-      ? {
-          id: company.id,
-          name: company.name,
-          logoUrl: company.logoUrl,
-        }
-      : null,
-    skills: employee.skills?.map((es: any) => ({
-      id: es.skill.id,
-      name: es.skill.name,
-      category: es.skill.category,
-      proficiency: es.proficiency,
-    })) || [],
-    documents: employee.documents?.map((doc: any) => ({
-      id: doc.id,
-      name: doc.name,
-      type: doc.type,
-      fileUrl: doc.fileUrl,
-      uploadedAt: doc.uploadedAt.toISOString(),
-    })) || [],
-    createdAt: employee.createdAt.toISOString(),
+    ...formatEmployeeList(employee),
+    privateInfo: employee.privateInfo || null,
+    skills: employee.skills ? employee.skills.map((s: any) => s.skill) : [],
+    documents: employee.documents || [],
   };
 }
 
-class EmployeeService {
+export class EmployeeService {
   async listEmployees(companyId: string, query: EmployeeQueryInput) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 20;
-    const search = query.search || undefined;
-    const status = query.status || undefined;
+    const page = Math.max(1, parseInt(query.page || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit || '20', 10)));
 
     const { employees, total } = await employeeRepository.findMany({
       companyId,
-      search,
-      status,
+      search: query.search,
+      status: query.status,
       page,
       limit,
     });
 
+    const items = employees.map(formatEmployeeList);
+    const totalPages = Math.ceil(total / limit) || 1;
+
     return {
-      employees: employees.map(formatEmployeeList),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      employees: items,
+      items,
+      total,
+      page,
+      limit,
+      totalPages,
+      pagination: { page, limit, total, totalPages },
     };
   }
 
-  async getEmployeeById(employeeId: string, companyId: string) {
-    const employee = await employeeRepository.findByIdAndCompany(employeeId, companyId);
+  async getEmployeeById(id: string, companyId: string) {
+    const employee = await employeeRepository.findByIdAndCompany(id, companyId);
     if (!employee) {
-      throw createError('Employee not found', 404, 'EMPLOYEE_NOT_FOUND');
-    }
-    return formatEmployeeDetail(employee);
-  }
-
-  async getEmployeeByUserId(userId: string, companyId: string) {
-    const employee = await employeeRepository.findByUserIdAndCompany(userId, companyId);
-    if (!employee) {
-      throw createError('Employee not found', 404, 'EMPLOYEE_NOT_FOUND');
+      throw createError('Employee not found', 404);
     }
     return formatEmployeeDetail(employee);
   }
@@ -119,59 +92,58 @@ class EmployeeService {
   async getCurrentEmployee(userId: string) {
     const employee = await employeeRepository.findByUserId(userId);
     if (!employee) {
-      throw createError('Employee profile not found', 404, 'EMPLOYEE_NOT_FOUND');
+      throw createError('Employee record not found for this user', 404);
     }
     return formatEmployeeDetail(employee);
   }
 
   async createEmployee(companyId: string, input: CreateEmployeeInput) {
-    const existingEmail = await employeeRepository.findUserByEmail(input.email);
-    if (existingEmail) {
-      throw createError('An account with this email already exists', 409, 'EMAIL_EXISTS');
+    const existingUser = await employeeRepository.findUserByEmail(input.email);
+    if (existingUser) {
+      throw createError('Email is already registered', 409);
     }
 
     const companyInfo = await employeeRepository.getCompanyPrefix(companyId);
     if (!companyInfo) {
-      throw createError('Company not found', 404, 'COMPANY_NOT_FOUND');
+      throw createError('Company not found', 404);
     }
 
-    const joiningDate = new Date(input.dateOfJoining);
-
-    const { loginId } = await generateLoginId({
+    const dateOfJoining = new Date(input.dateOfJoining);
+    const loginIdResult = await generateLoginId({
       companyId,
       companyPrefix: companyInfo.prefix,
       firstName: input.firstName,
       lastName: input.lastName,
-      dateOfJoining: joiningDate,
+      dateOfJoining,
     });
+    const employeeId = typeof loginIdResult === 'string' ? loginIdResult : (loginIdResult as any).loginId;
 
-    const temporaryPassword = generateTemporaryPassword();
-    const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_ROUNDS);
+    const tempPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS);
 
-    const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
+    const { employee } = await prisma.$transaction(async (tx: any) => {
+      const u = await tx.user.create({
         data: {
           email: input.email,
           passwordHash,
-          loginId,
-          role: 'EMPLOYEE',
+          loginId: employeeId,
           companyId,
+          role: 'EMPLOYEE',
           mustChangePassword: true,
-          isActive: true,
         },
       });
 
-      const employee = await tx.employee.create({
+      const e = await tx.employee.create({
         data: {
           companyId,
-          userId: user.id,
-          employeeId: `EMP-${user.id.substring(0, 8).toUpperCase()}`,
+          userId: u.id,
+          employeeId,
           firstName: input.firstName,
           lastName: input.lastName,
-          phone: input.phone || null,
+          phone: input.phone,
           department: input.department,
           designation: input.designation,
-          dateOfJoining: joiningDate,
+          dateOfJoining,
           employmentType: input.employmentType || 'FULL_TIME',
           status: 'ACTIVE',
         },
@@ -186,55 +158,55 @@ class EmployeeService {
               mustChangePassword: true,
             },
           },
+          company: {
+            select: {
+              id: true,
+              name: true,
+              prefix: true,
+            },
+          },
         },
       });
 
-      return { user, employee };
+      return { user: u, employee: e };
     });
 
-    const employee = await employeeRepository.findByIdAndCompany(
-      result.employee.id,
-      companyId
-    );
-
     return {
-      employee: employee ? formatEmployeeDetail(employee) : formatEmployeeList(result.employee),
+      employee: formatEmployeeDetail(employee),
       credentials: {
-        loginId: result.user.loginId,
-        temporaryPassword,
-        email: result.user.email,
+        loginId: employeeId,
+        temporaryPassword: tempPassword,
       },
     };
   }
 
-  async updateEmployee(employeeId: string, companyId: string, input: UpdateEmployeeInput) {
-    const existing = await employeeRepository.findByIdAndCompany(employeeId, companyId);
+  async updateEmployee(id: string, companyId: string, input: UpdateEmployeeInput) {
+    if (!input || Object.keys(input).length === 0) {
+      throw createError('At least one field to update is required', 400);
+    }
+
+    const existing = await employeeRepository.findByIdAndCompany(id, companyId);
     if (!existing) {
-      throw createError('Employee not found', 404, 'EMPLOYEE_NOT_FOUND');
+      throw createError('Employee not found', 404);
     }
 
-    const updateData: any = {};
-    if (input.firstName) updateData.firstName = input.firstName;
-    if (input.lastName) updateData.lastName = input.lastName;
-    if (input.phone !== undefined) updateData.phone = input.phone || null;
-    if (input.department) updateData.department = input.department;
-    if (input.designation) updateData.designation = input.designation;
-    if (input.employmentType) updateData.employmentType = input.employmentType;
+    await employeeRepository.update(id, companyId, {
+      ...(input.firstName && { firstName: input.firstName }),
+      ...(input.lastName && { lastName: input.lastName }),
+      ...(input.phone !== undefined && { phone: input.phone }),
+      ...(input.department && { department: input.department }),
+      ...(input.designation && { designation: input.designation }),
+      ...(input.employmentType && { employmentType: input.employmentType }),
+    });
 
-    if (Object.keys(updateData).length === 0) {
-      throw createError('No fields to update', 400, 'NO_FIELDS_TO_UPDATE');
-    }
-
-    await employeeRepository.update(employeeId, companyId, updateData);
-
-    const updated = await employeeRepository.findByIdAndCompany(employeeId, companyId);
+    const updated = await employeeRepository.findByIdAndCompany(id, companyId);
     return updated ? formatEmployeeDetail(updated) : null;
   }
 
   async updateEmployeeStatus(employeeId: string, companyId: string, status: 'ACTIVE' | 'INACTIVE') {
     const existing = await employeeRepository.findByIdAndCompany(employeeId, companyId);
     if (!existing) {
-      throw createError('Employee not found', 404, 'EMPLOYEE_NOT_FOUND');
+      throw createError('Employee not found', 404);
     }
 
     await employeeRepository.updateStatus(employeeId, companyId, status);
@@ -265,6 +237,39 @@ class EmployeeService {
       totalEmployees: total,
       activeEmployees: active,
       inactiveEmployees: total - active,
+    };
+  }
+
+  async updateEmployeeAvatar(employeeId: string, companyId: string, requestingUser: any, file?: Express.Multer.File) {
+    if (!file) {
+      throw createError('No avatar file provided', 400);
+    }
+
+    const employee = await employeeRepository.findByIdAndCompany(employeeId, companyId);
+    if (!employee) {
+      throw createError('Employee not found', 404);
+    }
+
+    const isSelf = employee.userId === requestingUser.id;
+    const isPrivileged = requestingUser.role === 'ADMIN' || requestingUser.role === 'HR';
+    if (!isSelf && !isPrivileged) {
+      throw createError('Unauthorized to update avatar for this employee', 403);
+    }
+
+    const fileUrl = `/uploads/avatars/${file.filename}`;
+
+    await prisma.employeeDocument.create({
+      data: {
+        employeeId: employee.id,
+        name: 'Profile Photo',
+        type: 'AVATAR',
+        fileUrl,
+      },
+    });
+
+    return {
+      employeeId: employee.id,
+      avatarUrl: fileUrl,
     };
   }
 }

@@ -5,52 +5,52 @@ import PageContainer from '@/components/layout/PageContainer';
 import NotificationItem from '@/components/notifications/NotificationItem';
 import NotificationFilters from '@/components/notifications/NotificationFilters';
 import EmptyState from '@/components/ui/EmptyState';
-import { useNotificationsMock, useNotificationStatsMock } from '@/hooks/useNotifications';
-import type { NotificationFilter, NotificationSortOption } from '@/types/notification.types';
+import { useNotificationsMock, useNotificationStatsMock, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useNotifications';
+import type { NotificationFilter, NotificationSortOption, Notification } from '@/types/notification.types';
 
 export default function EmployeeNotificationsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<NotificationFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<NotificationSortOption>('newest');
-  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
   const notifications = useNotificationsMock();
   const stats = useNotificationStatsMock();
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
 
   const filteredNotifications = useMemo(() => {
     let result = notifications;
 
     if (filter === 'unread') {
-      result = result.filter((n) => !n.read);
+      result = result.filter((n: Notification) => !n.read);
     } else if (filter !== 'all') {
-      result = result.filter((n) => n.type === filter);
+      result = result.filter((n: Notification) => (n.type as string) === filter);
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (n) =>
+        (n: Notification) =>
           n.title.toLowerCase().includes(q) ||
           n.message.toLowerCase().includes(q)
       );
     }
 
-    return [...result].sort((a, b) => {
+    return [...result].sort((a: Notification, b: Notification) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
       return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
   }, [notifications, filter, searchQuery, sortBy]);
 
-  const handleMarkRead = useCallback((_id: string) => {}, []);
+  const handleMarkRead = useCallback((id: string) => {
+    markReadMutation.mutate(id);
+  }, [markReadMutation]);
 
   const handleMarkAllRead = useCallback(() => {
-    setIsMarkingAll(true);
-    setTimeout(() => {
-      setIsMarkingAll(false);
-    }, 500);
-  }, []);
+    markAllReadMutation.mutate();
+  }, [markAllReadMutation]);
 
   const handleNavigate = useCallback(
     (route: string) => {
@@ -77,11 +77,11 @@ export default function EmployeeNotificationsPage() {
             {stats.unread > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                disabled={isMarkingAll}
+                disabled={markAllReadMutation.isPending}
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
               >
                 <CheckCheck className="h-4 w-4" />
-                {isMarkingAll ? 'Marking...' : 'Mark all as read'}
+                {markAllReadMutation.isPending ? 'Marking...' : 'Mark all as read'}
               </button>
             )}
           </div>
@@ -124,7 +124,7 @@ export default function EmployeeNotificationsPage() {
           />
         ) : (
           <div className="space-y-3">
-            {filteredNotifications.map((notification) => (
+            {filteredNotifications.map((notification: Notification) => (
               <NotificationItem
                 key={notification.id}
                 notification={notification}

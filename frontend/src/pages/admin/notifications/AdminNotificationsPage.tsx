@@ -18,7 +18,7 @@ export default function AdminNotificationsPage() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const filtered = useMemo(() => {
-    return notifications.filter((n) => filter === 'unread' || !n.isRead);
+    return notifications.filter((n) => filter === 'all' || !n.isRead);
   }, [notifications, filter]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -36,13 +36,13 @@ export default function AdminNotificationsPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Notifications</h1>
             <p className="mt-1 text-sm text-gray-500">Stay updated with your organization&apos;s activity.</p>
           </div>
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 w-full sm:w-auto"
             >
               <CheckCheck size={16} />
               Mark All Read ({unreadCount})
@@ -76,7 +76,7 @@ export default function AdminNotificationsPage() {
 
         <div className="rounded-xl border border-gray-100 bg-white shadow-card">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-12">
+            <div className="flex flex-col items-center py-12 px-4 text-center">
               <Bell size={40} className="mb-3 text-gray-300" />
               <p className="text-sm font-medium text-gray-900">No notifications</p>
               <p className="mt-1 text-xs text-gray-500">
@@ -91,14 +91,18 @@ export default function AdminNotificationsPage() {
                 return (
                   <div
                     key={notification.id}
-                    className={`flex items-start gap-4 p-5 transition-colors hover:bg-gray-50/50 ${
+                    className={`flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 sm:p-5 transition-colors hover:bg-gray-50/50 ${
                       !notification.isRead ? 'bg-brand-50/30' : ''
                     }`}
                   >
-                    <div className={`shrink-0 rounded-lg ${config.bg} p-2.5`}>
-                      <Icon size={18} className={config.color} />
+                    <div className="flex items-center gap-3 sm:block w-full sm:w-auto">
+                      <div className={`shrink-0 rounded-lg ${config.bg} p-2.5`}>
+                        <Icon size={18} className={config.color} />
+                      </div>
+                      <span className="shrink-0 text-[11px] text-gray-400 sm:hidden ml-auto">{notification.createdAt}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
+
+                    <div className="min-w-0 flex-1 w-full">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <p className={`text-sm ${!notification.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
@@ -108,15 +112,15 @@ export default function AdminNotificationsPage() {
                             <span className="h-2 w-2 shrink-0 rounded-full bg-brand-500" />
                           )}
                         </div>
-                        <span className="shrink-0 text-[11px] text-gray-400">{notification.createdAt}</span>
+                        <span className="hidden sm:inline shrink-0 text-[11px] text-gray-400">{notification.createdAt}</span>
                       </div>
-                      <p className="mt-1 text-sm text-gray-500">{notification.message}</p>
+                      <p className="mt-1 text-sm text-gray-500 leading-relaxed break-words">{notification.message}</p>
                       {!notification.isRead && (
                         <button
                           onClick={() => markRead(notification.id)}
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+                          className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700"
                         >
-                          <Check size={12} />
+                          <Check size={13} />
                           Mark as read
                         </button>
                       )}

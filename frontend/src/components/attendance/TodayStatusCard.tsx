@@ -72,11 +72,6 @@ export default function TodayStatusCard({
               <p className="mt-0.5 text-sm text-gray-400">
                 Checked in at: {today.checkInTime}
               </p>
-              {today.workingHours && (
-                <p className="mt-1 text-sm font-medium text-blue-600">
-                  Current working time: {today.workingHours}
-                </p>
-              )}
             </div>
             <button
               onClick={onCheckOut}
