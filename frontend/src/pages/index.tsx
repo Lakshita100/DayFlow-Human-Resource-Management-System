@@ -19,6 +19,7 @@ import UpcomingLeave from '@/components/dashboard/UpcomingLeave';
 import NotificationsPreview from '@/components/dashboard/NotificationsPreview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { mockDashboardSummary } from '@/data/mockDashboard';
+import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -204,7 +205,7 @@ export function ProfilePage() {
 }
 
 export function EmployeeAttendance() {
-  return <PlaceholderPage title="Attendance" icon="⏰" />;
+  return <EmployeeAttendancePage />;
 }
 
 export function AdminAttendance() {
