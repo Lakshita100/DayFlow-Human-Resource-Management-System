@@ -23,6 +23,9 @@ import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
 import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
 import EmployeeSalaryPage from '@/pages/EmployeeSalaryPage';
 import EmployeeDocumentsPage from '@/pages/EmployeeDocumentsPage';
+import EmployeeNotificationsPage from '@/pages/EmployeeNotificationsPage';
+import EmployeeCalendarPage from '@/pages/EmployeeCalendarPage';
+import EmployeeSettingsPage from '@/pages/EmployeeSettingsPage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -240,13 +243,13 @@ export function DocumentsPage() {
 }
 
 export function NotificationsPage() {
-  return <PlaceholderPage title="Notifications" icon="🔔" />;
+  return <EmployeeNotificationsPage />;
 }
 
 export function CalendarPage() {
-  return <PlaceholderPage title="Calendar" icon="📅" />;
+  return <EmployeeCalendarPage />;
 }
 
 export function SettingsPage() {
-  return <PlaceholderPage title="Settings" icon="⚙️" />;
+  return <EmployeeSettingsPage />;
 }
