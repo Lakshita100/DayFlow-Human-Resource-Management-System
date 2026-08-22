@@ -10,7 +10,14 @@ import MonthlyOverview from '@/components/attendance/MonthlyOverview';
 import AttendanceTrendChart from '@/components/attendance/AttendanceTrendChart';
 import StatusLegend from '@/components/attendance/StatusLegend';
 import { AttendanceSummarySkeleton, AttendanceTableSkeleton } from '@/components/attendance/AttendanceSkeleton';
-import { useTodayAttendanceMock, useMonthlyOverviewMock, useAttendanceTrendMock, useAttendanceRecordsMock } from '@/hooks/useAttendance';
+import {
+  useTodayAttendance,
+  useMonthlyOverview,
+  useAttendanceTrend,
+  useAttendanceRecords,
+  useCheckIn,
+  useCheckOut,
+} from '@/hooks/useAttendance';
 import type { AttendanceRecord, AttendanceFilters as FiltersType } from '@/types/attendance.types';
 
 const now = new Date();
@@ -23,13 +30,10 @@ export default function EmployeeAttendancePage() {
   const [filters, setFilters] = useState<FiltersType>({ status: 'all', dateFrom: null, dateTo: null });
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
 
-  const [todayState, setTodayState] = useState<'idle' | 'checking_in' | 'checking_out'>('idle');
-
-  const today = useTodayAttendanceMock();
-  const overview = useMonthlyOverviewMock();
-  const trend = useAttendanceTrendMock();
-
-  const recordsData = useAttendanceRecordsMock({
+  const todayQuery = useTodayAttendance();
+  const overviewQuery = useMonthlyOverview(month, year);
+  const trendQuery = useAttendanceTrend();
+  const recordsQuery = useAttendanceRecords({
     page,
     limit: 10,
     month,
@@ -39,21 +43,16 @@ export default function EmployeeAttendancePage() {
     dateTo: filters.dateTo,
   });
 
-  const isLoading = false;
+  const checkInMutation = useCheckIn();
+  const checkOutMutation = useCheckOut();
 
   const handleCheckIn = useCallback(() => {
-    setTodayState('checking_in');
-    setTimeout(() => {
-      setTodayState('idle');
-    }, 1500);
-  }, []);
+    checkInMutation.mutate();
+  }, [checkInMutation]);
 
   const handleCheckOut = useCallback(() => {
-    setTodayState('checking_out');
-    setTimeout(() => {
-      setTodayState('idle');
-    }, 1500);
-  }, []);
+    checkOutMutation.mutate();
+  }, [checkOutMutation]);
 
   const handleMonthChange = useCallback((m: number, y: number) => {
     setMonth(m);
@@ -87,52 +86,51 @@ export default function EmployeeAttendancePage() {
       <div className="mt-6">
         {activeTab === 'my-attendance' && (
           <div className="space-y-6">
-            {isLoading ? (
-              <>
-                <AttendanceSummarySkeleton />
-                <AttendanceTableSkeleton />
-              </>
-            ) : (
-              <>
-                <AttendanceSummary
-                  today={today}
-                  onCheckIn={handleCheckIn}
-                  onCheckOut={handleCheckOut}
-                  isCheckingIn={todayState === 'checking_in'}
-                  isCheckingOut={todayState === 'checking_out'}
-                />
+            {todayQuery.isLoading ? (
+              <AttendanceSummarySkeleton />
+            ) : todayQuery.data ? (
+              <AttendanceSummary
+                today={todayQuery.data}
+                onCheckIn={handleCheckIn}
+                onCheckOut={handleCheckOut}
+                isCheckingIn={checkInMutation.isPending}
+                isCheckingOut={checkOutMutation.isPending}
+              />
+            ) : null}
 
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                  <div className="xl:col-span-2">
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <h2 className="text-base font-semibold text-gray-900">Attendance Record</h2>
-                      <div className="flex items-center gap-3">
-                        <MonthSelector month={month} year={year} onChange={handleMonthChange} />
-                        <AttendanceFilters
-                          filters={filters}
-                          onApply={handleFilterApply}
-                          onClear={handleFilterClear}
-                        />
-                      </div>
-                    </div>
-                    <AttendanceTable
-                      records={recordsData.records}
-                      total={recordsData.total}
-                      page={recordsData.page}
-                      totalPages={recordsData.totalPages}
-                      onPageChange={setPage}
-                      onViewDetails={handleViewDetails}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <div className="xl:col-span-2">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-base font-semibold text-gray-900">Attendance Record</h2>
+                  <div className="flex items-center gap-3">
+                    <MonthSelector month={month} year={year} onChange={handleMonthChange} />
+                    <AttendanceFilters
+                      filters={filters}
+                      onApply={handleFilterApply}
+                      onClear={handleFilterClear}
                     />
                   </div>
-
-                  <div className="space-y-6">
-                    <MonthlyOverview data={overview} />
-                    <AttendanceTrendChart data={trend} />
-                    <StatusLegend />
-                  </div>
                 </div>
-              </>
-            )}
+                {recordsQuery.isLoading || !recordsQuery.data ? (
+                  <AttendanceTableSkeleton />
+                ) : (
+                  <AttendanceTable
+                    records={recordsQuery.data.records}
+                    total={recordsQuery.data.total}
+                    page={recordsQuery.data.page}
+                    totalPages={recordsQuery.data.totalPages}
+                    onPageChange={setPage}
+                    onViewDetails={handleViewDetails}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-6">
+                {overviewQuery.data && <MonthlyOverview data={overviewQuery.data} />}
+                {trendQuery.data && <AttendanceTrendChart data={trendQuery.data} />}
+                <StatusLegend />
+              </div>
+            </div>
           </div>
         )}
 
