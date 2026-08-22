@@ -1,0 +1,16 @@
+import type { EmployeeListItem } from '@/types/admin-pages.types';
+
+export const mockEmployees: EmployeeListItem[] = [
+  { id: '1', employeeId: 'EMP001', firstName: 'Admin', lastName: 'User', email: 'admin@dayflow.com', phone: '+1234567890', department: 'Management', designation: 'System Administrator', dateOfJoining: '01 Jan 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '2', employeeId: 'EMP002', firstName: 'HR', lastName: 'Manager', email: 'hr@dayflow.com', phone: '+1234567891', department: 'Human Resources', designation: 'HR Manager', dateOfJoining: '15 Jan 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '3', employeeId: 'EMP003', firstName: 'John', lastName: 'Doe', email: 'john.doe@dayflow.com', phone: '+1234567892', department: 'Engineering', designation: 'Software Developer', dateOfJoining: '01 Feb 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '4', employeeId: 'EMP004', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@dayflow.com', phone: '+1234567893', department: 'Engineering', designation: 'Senior Software Developer', dateOfJoining: '15 Feb 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '5', employeeId: 'EMP005', firstName: 'Bob', lastName: 'Wilson', email: 'bob.wilson@dayflow.com', phone: '+1234567894', department: 'Marketing', designation: 'Marketing Specialist', dateOfJoining: '01 Mar 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '6', employeeId: 'EMP006', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@dayflow.com', phone: '+1234567895', department: 'Engineering', designation: 'Frontend Developer', dateOfJoining: '10 Apr 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '7', employeeId: 'EMP007', firstName: 'Amit', lastName: 'Patel', email: 'amit.patel@dayflow.com', phone: '+1234567896', department: 'Marketing', designation: 'Content Strategist', dateOfJoining: '15 May 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '8', employeeId: 'EMP008', firstName: 'Neha', lastName: 'Gupta', email: 'neha.gupta@dayflow.com', phone: '+1234567897', department: 'Design', designation: 'UI/UX Designer', dateOfJoining: '01 Jun 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '9', employeeId: 'EMP009', firstName: 'Rohit', lastName: 'Verma', email: 'rohit.verma@dayflow.com', phone: '+1234567898', department: 'Finance', designation: 'Financial Analyst', dateOfJoining: '10 Jul 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '10', employeeId: 'EMP010', firstName: 'Ananya', lastName: 'Singh', email: 'ananya.singh@dayflow.com', phone: '+1234567899', department: 'Engineering', designation: 'Backend Developer', dateOfJoining: '01 Aug 2024', employmentType: 'FULL_TIME', status: 'INACTIVE' },
+  { id: '11', employeeId: 'EMP011', firstName: 'Vikram', lastName: 'Rao', email: 'vikram.rao@dayflow.com', phone: '+1234567900', department: 'Operations', designation: 'Operations Manager', dateOfJoining: '15 Sep 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+  { id: '12', employeeId: 'EMP012', firstName: 'Sneha', lastName: 'Iyer', email: 'sneha.iyer@dayflow.com', phone: '+1234567901', department: 'HR', designation: 'HR Coordinator', dateOfJoining: '01 Oct 2024', employmentType: 'FULL_TIME', status: 'ACTIVE' },
+];

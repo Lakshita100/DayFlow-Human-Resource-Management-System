@@ -1,0 +1,14 @@
+import type { AdminTimeOffRequest } from '@/types/admin-pages.types';
+
+export const mockTimeOffRequests: AdminTimeOffRequest[] = [
+  { id: '1', employeeId: 'EMP003', employeeName: 'John Doe', department: 'Engineering', designation: 'Software Developer', type: 'SICK', startDate: '22 Aug 2026', endDate: '24 Aug 2026', days: 3, reason: 'Medical appointment and recovery', status: 'PENDING', appliedOn: '20 Aug 2026' },
+  { id: '2', employeeId: 'EMP006', employeeName: 'Priya Sharma', department: 'Engineering', designation: 'Frontend Developer', type: 'PAID', startDate: '28 Aug 2026', endDate: '29 Aug 2026', days: 2, reason: 'Family function', status: 'PENDING', appliedOn: '21 Aug 2026' },
+  { id: '3', employeeId: 'EMP008', employeeName: 'Neha Gupta', department: 'Design', designation: 'UI/UX Designer', type: 'SICK', startDate: '25 Aug 2026', endDate: '26 Aug 2026', days: 2, reason: 'Feeling unwell', status: 'PENDING', appliedOn: '22 Aug 2026' },
+  { id: '4', employeeId: 'EMP009', employeeName: 'Rohit Verma', department: 'Finance', designation: 'Financial Analyst', type: 'UNPAID', startDate: '01 Sep 2026', endDate: '03 Sep 2026', days: 3, reason: 'Personal work', status: 'PENDING', appliedOn: '22 Aug 2026' },
+  { id: '5', employeeId: 'EMP005', employeeName: 'Bob Wilson', department: 'Marketing', designation: 'Marketing Specialist', type: 'PAID', startDate: '05 Sep 2026', endDate: '06 Sep 2026', days: 2, reason: 'Vacation', status: 'PENDING', appliedOn: '21 Aug 2026' },
+  { id: '6', employeeId: 'EMP007', employeeName: 'Amit Patel', department: 'Marketing', designation: 'Content Strategist', type: 'SICK', startDate: '10 Aug 2026', endDate: '11 Aug 2026', days: 2, reason: 'Fever', status: 'APPROVED', appliedOn: '09 Aug 2026' },
+  { id: '7', employeeId: 'EMP011', employeeName: 'Vikram Rao', department: 'Operations', designation: 'Operations Manager', type: 'PAID', startDate: '15 Aug 2026', endDate: '17 Aug 2026', days: 3, reason: 'Family vacation', status: 'APPROVED', appliedOn: '10 Aug 2026' },
+  { id: '8', employeeId: 'EMP004', employeeName: 'Jane Smith', department: 'Engineering', designation: 'Senior Software Developer', type: 'PAID', startDate: '01 Aug 2026', endDate: '02 Aug 2026', days: 2, reason: 'Personal', status: 'APPROVED', appliedOn: '28 Jul 2026' },
+  { id: '9', employeeId: 'EMP012', employeeName: 'Sneha Iyer', department: 'HR', designation: 'HR Coordinator', type: 'UNPAID', startDate: '20 Jul 2026', endDate: '22 Jul 2026', days: 3, reason: 'Extended leave', status: 'REJECTED', appliedOn: '18 Jul 2026' },
+  { id: '10', employeeId: 'EMP010', employeeName: 'Ananya Singh', department: 'Engineering', designation: 'Backend Developer', type: 'SICK', startDate: '05 Aug 2026', endDate: '07 Aug 2026', days: 3, reason: 'Medical surgery', status: 'APPROVED', appliedOn: '03 Aug 2026' },
+];
