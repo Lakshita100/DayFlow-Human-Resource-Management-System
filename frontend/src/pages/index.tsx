@@ -21,6 +21,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import { mockDashboardSummary } from '@/data/mockDashboard';
 import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
 import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
+import EmployeeSalaryPage from '@/pages/EmployeeSalaryPage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -222,7 +223,7 @@ export function AdminTimeOff() {
 }
 
 export function SalaryPage() {
-  return <PlaceholderPage title="My Salary" icon="💰" />;
+  return <EmployeeSalaryPage />;
 }
 
 export function AdminPayroll() {
