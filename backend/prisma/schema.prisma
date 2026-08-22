@@ -39,6 +39,12 @@ enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
+}
+
+enum PayrollStatus {
+  GENERATED
+  PAID
 }
 
 // ============================================
@@ -46,16 +52,17 @@ enum LeaveStatus {
 // ============================================
 
 model Company {
-  id           String         @id @default(uuid())
-  name         String         @unique
-  prefix       String         @unique
-  logoUrl      String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  prefix    String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  employees    Employee[]
-  users        User[]
+  employees     Employee[]
+  users         User[]
   yearlySerials YearlySerial[]
+  payrolls      Payroll[]
 }
 
 model User {
@@ -93,18 +100,20 @@ model Employee {
   dateOfJoining  DateTime
   employmentType String         @default("FULL_TIME")
   status         EmployeeStatus @default(ACTIVE)
+  profilePicture String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  company        Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  privateInfo    EmployeePrivateInfo?
-  skills         EmployeeSkill[]
-  documents      EmployeeDocument[]
-  attendance     Attendance[]
-  timeOffRequests TimeOff[]
+  company          Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privateInfo      EmployeePrivateInfo?
+  skills           EmployeeSkill[]
+  documents        EmployeeDocument[]
+  attendance       Attendance[]
+  timeOffRequests  TimeOff[]
   leaveAllocations LeaveAllocation[]
-  salaryStructure SalaryStructure?
+  salaryStructure  SalaryStructure?
+  payrolls         Payroll[]
 
   @@index([employeeId])
   @@index([userId])
@@ -112,10 +121,10 @@ model Employee {
 }
 
 model YearlySerial {
-  id        String @id @default(uuid())
-  companyId String
-  year      Int
-  lastSerial Int   @default(0)
+  id         String @id @default(uuid())
+  companyId  String
+  year       Int
+  lastSerial Int    @default(0)
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -131,6 +140,7 @@ model EmployeePrivateInfo {
   city                  String?
   state                 String?
   zipCode               String?
+  country               String?
   emergencyContactName  String?
   emergencyContactPhone String?
 
@@ -247,6 +257,34 @@ model SalaryComponent {
   salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
 
   @@index([salaryStructureId])
+}
+
+model Payroll {
+  id              String        @id @default(uuid())
+  employeeId      String
+  companyId       String
+  periodStart     DateTime
+  periodEnd       DateTime
+  workingDays     Int
+  presentDays     Int
+  paidLeaveDays   Int
+  unpaidLeaveDays Int
+  absentDays      Int
+  payableDays     Float
+  grossSalary     Float
+  totalDeductions Float
+  netSalary       Float
+  status          PayrollStatus @default(GENERATED)
+  generatedBy     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, periodStart, periodEnd])
+  @@index([companyId])
+  @@index([employeeId])
 }
 
 model Notification {
