@@ -22,6 +22,7 @@ import { mockDashboardSummary } from '@/data/mockDashboard';
 import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
 import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
 import EmployeeSalaryPage from '@/pages/EmployeeSalaryPage';
+import EmployeeDocumentsPage from '@/pages/EmployeeDocumentsPage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -235,7 +236,7 @@ export function EmployeeListPage() {
 }
 
 export function DocumentsPage() {
-  return <PlaceholderPage title="Documents" icon="📄" />;
+  return <EmployeeDocumentsPage />;
 }
 
 export function NotificationsPage() {
