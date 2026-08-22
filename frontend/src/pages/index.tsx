@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, AlertCircle } from 'lucide-react';
 import PageContainer from '@/components/layout/PageContainer';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import PersonalInformationCard from '@/components/profile/PersonalInformationCard';
@@ -19,6 +19,15 @@ import UpcomingLeave from '@/components/dashboard/UpcomingLeave';
 import NotificationsPreview from '@/components/dashboard/NotificationsPreview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { mockDashboardSummary } from '@/data/mockDashboard';
+import type { DashboardSummary } from '@/types/dashboard.types';
+import AttendanceSummary from '@/components/attendance/AttendanceSummary';
+import { AttendanceSummarySkeleton } from '@/components/attendance/AttendanceSkeleton';
+import {
+  useTodayAttendance,
+  useCheckIn,
+  useCheckOut,
+} from '@/hooks/useAttendance';
+import { useWorkingHours } from '@/hooks/useWorkingHours';
 import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
 import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
 import EmployeeSalaryPage from '@/pages/EmployeeSalaryPage';
@@ -51,12 +60,67 @@ function PlaceholderPage({ title, description, icon = '📋' }: PlaceholderPageP
 }
 
 export function EmployeeDashboard() {
+  const { data: today, isLoading, isError, refetch } = useTodayAttendance();
+  const checkInMutation = useCheckIn();
+  const checkOutMutation = useCheckOut();
+  const workingHours = useWorkingHours(today);
+
+  const summary: DashboardSummary = {
+    todayStatus: {
+      status:
+        !today || today.status === 'not_checked_in' ? 'absent' : 'present',
+      checkedInAt: today?.checkInTime ?? null,
+    },
+    workingHours: {
+      total: workingHours,
+      description:
+        today?.status === 'checked_in'
+          ? "Today's running time"
+          : "Today's total time",
+    },
+    monthlyAttendance: mockDashboardSummary.monthlyAttendance,
+    leaveBalance: mockDashboardSummary.leaveBalance,
+  };
+
   return (
     <PageContainer>
       <div className="space-y-6">
         <DashboardGreeting />
 
-        <SummaryCards data={mockDashboardSummary} />
+        {isLoading ? (
+          <AttendanceSummarySkeleton />
+        ) : isError || !today ? (
+          <div className="flex flex-col items-start gap-3 rounded-xl border border-gray-100 bg-white p-6 shadow-card sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-red-500" />
+              <p className="text-sm text-gray-600">
+                Unable to load your attendance status.
+              </p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <AttendanceSummary
+            today={today}
+            onCheckIn={() => checkInMutation.mutate()}
+            onCheckOut={() => checkOutMutation.mutate()}
+            isCheckingIn={checkInMutation.isPending}
+            isCheckingOut={checkOutMutation.isPending}
+          />
+        )}
+
+        {(checkInMutation.isError || checkOutMutation.isError) && (
+          <p className="rounded-lg bg-red-50 px-4 py-2.5 text-xs font-medium text-red-600">
+            Something went wrong while marking your attendance. Please try again.
+          </p>
+        )}
+
+        <SummaryCards data={summary} />
 
         <QuickActions />
 
