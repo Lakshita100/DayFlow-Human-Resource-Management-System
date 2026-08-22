@@ -197,13 +197,13 @@ export default function LoginPage() {
                   authLogin(
                     {
                       id: 'dev-emp-001',
-                      loginId: 'john.doe',
+                      loginId: 'DFJODO20240003',
                       email: 'john.doe@dayflow.com',
                       name: 'John Doe',
                       role: 'EMPLOYEE',
                       employeeId: 'EMP-001',
-                      companyId: null,
-                      company: null,
+                      companyId: 'company-a-id',
+                      company: { id: 'company-a-id', name: 'Dayflow', logoUrl: null },
                       mustChangePassword: false,
                     },
                     'dev-token-employee'
@@ -220,13 +220,13 @@ export default function LoginPage() {
                   authLogin(
                     {
                       id: 'dev-admin-001',
-                      loginId: 'admin',
+                      loginId: 'DFADUN20240001',
                       email: 'admin@dayflow.com',
                       name: 'Admin User',
                       role: 'ADMIN',
                       employeeId: 'ADM-001',
-                      companyId: null,
-                      company: null,
+                      companyId: 'company-a-id',
+                      company: { id: 'company-a-id', name: 'Dayflow', logoUrl: null },
                       mustChangePassword: false,
                     },
                     'dev-token-admin'

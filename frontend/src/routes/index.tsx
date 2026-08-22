@@ -9,21 +9,24 @@ import LoginPage from '@/pages/auth/LoginPage';
 import SignUpPage from '@/pages/auth/SignUpPage';
 import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
 import UnauthorizedPage from '@/pages/auth/UnauthorizedPage';
+import AdminDashboard from '@/pages/admin/dashboard/AdminDashboard';
+import AdminEmployeesPage from '@/pages/admin/employees/AdminEmployeesPage';
+import AdminAttendancePage from '@/pages/admin/attendance/AdminAttendancePage';
+import AdminTimeOffPage from '@/pages/admin/timeoff/AdminTimeOffPage';
+import AdminPayrollPage from '@/pages/admin/payroll/AdminPayrollPage';
+import AdminNotificationsPage from '@/pages/admin/notifications/AdminNotificationsPage';
+import AdminSettingsPage from '@/pages/admin/settings/AdminSettingsPage';
+import AdminProfilePage from '@/pages/admin/profile/AdminProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import {
   EmployeeDashboard,
-  AdminDashboard,
   ProfilePage,
   EmployeeAttendance,
-  AdminAttendance,
   LeavePage,
-  AdminTimeOff,
   SalaryPage,
-  AdminPayroll,
-  EmployeeListPage,
   DocumentsPage,
-  NotificationsPage,
   CalendarPage,
+  NotificationsPage,
   SettingsPage,
 } from '@/pages/index';
 
@@ -99,12 +102,13 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: 'dashboard', element: <AdminDashboard /> },
-      { path: 'employees', element: <EmployeeListPage /> },
-      { path: 'attendance', element: <AdminAttendance /> },
-      { path: 'time-off', element: <AdminTimeOff /> },
-      { path: 'payroll', element: <AdminPayroll /> },
-      { path: 'notifications', element: <NotificationsPage /> },
-      { path: 'settings', element: <SettingsPage /> },
+      { path: 'employees', element: <AdminEmployeesPage /> },
+      { path: 'attendance', element: <AdminAttendancePage /> },
+      { path: 'time-off', element: <AdminTimeOffPage /> },
+      { path: 'payroll', element: <AdminPayrollPage /> },
+      { path: 'notifications', element: <AdminNotificationsPage /> },
+      { path: 'settings', element: <AdminSettingsPage /> },
+      { path: 'profile', element: <AdminProfilePage /> },
     ],
   },
   {

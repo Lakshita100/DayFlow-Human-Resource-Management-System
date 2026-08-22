@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, User, LogOut } from 'lucide-react';
+import { ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 function getInitials(name: string): string {
@@ -35,9 +35,16 @@ export default function UserMenu() {
     };
   }, []);
 
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'HR';
+
   function handleMyProfile() {
     setOpen(false);
-    navigate('/employee/profile');
+    navigate(isAdmin ? '/admin/profile' : '/employee/profile');
+  }
+
+  function handleSettings() {
+    setOpen(false);
+    navigate(isAdmin ? '/admin/settings' : '/employee/settings');
   }
 
   function handleLogout() {
@@ -89,6 +96,14 @@ export default function UserMenu() {
             >
               <User size={16} className="text-gray-400" />
               My Profile
+            </button>
+            <button
+              role="menuitem"
+              onClick={handleSettings}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              <Settings size={16} className="text-gray-400" />
+              Settings
             </button>
           </div>
           <div className="border-t border-gray-100 py-1">
