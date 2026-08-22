@@ -1,8 +1,90 @@
-import { Search, Bell, Menu, CheckCircle2 } from 'lucide-react';
+import { Search, Bell, Menu, LogIn, LogOut } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import UserMenu from './UserMenu';
+import { useTodayAttendance, useCheckIn, useCheckOut } from '@/hooks/useAttendance';
+import { useWorkingHours } from '@/hooks/useWorkingHours';
 
 interface HeaderProps {
   onMenuClick: () => void;
+}
+
+function AttendanceStatusPill() {
+  const location = useLocation();
+  const isEmployeeRoute = location.pathname.startsWith('/employee');
+  const { data: today } = useTodayAttendance();
+  const workingHours = useWorkingHours(today);
+  const checkInMutation = useCheckIn();
+  const checkOutMutation = useCheckOut();
+
+  const isBusy = checkInMutation.isPending || checkOutMutation.isPending;
+
+  return (
+    <div className="hidden items-center gap-2 sm:flex">
+      {!today ? (
+        <div className="flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-gray-300" />
+          <span className="text-xs font-medium text-gray-400">Loading…</span>
+        </div>
+      ) : today.status === 'not_checked_in' ? (
+        <>
+          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="text-xs font-medium text-amber-700">Not Checked In</span>
+          </div>
+          {isEmployeeRoute && (
+            <button
+              onClick={() => checkInMutation.mutate()}
+              disabled={isBusy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {checkInMutation.isPending ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <LogIn size={14} />
+              )}
+              Check In
+            </button>
+          )}
+        </>
+      ) : today.status === 'checked_in' ? (
+        <>
+          <div
+            className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5"
+            title={`Checked in at ${today.checkInTime ?? '--'} • ${workingHours}`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            <span className="text-xs font-medium text-green-700">Checked In</span>
+            <span className="hidden text-xs text-green-600/70 md:inline">
+              Since {today.checkInTime ?? '--'} • {workingHours}
+            </span>
+          </div>
+          {isEmployeeRoute && (
+            <button
+              onClick={() => checkOutMutation.mutate()}
+              disabled={isBusy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {checkOutMutation.isPending ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <LogOut size={14} />
+              )}
+              Check Out
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-green-500" />
+          <span className="text-xs font-medium text-green-700">Present</span>
+          <span className="hidden text-xs text-green-600/70 md:inline">{workingHours}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
@@ -40,16 +122,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
       {/* Right section */}
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
-        {/* Check-in Status */}
-        <div className="hidden items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 sm:flex">
-          <CheckCircle2 size={14} className="text-green-500" />
-          <span className="text-xs font-medium text-green-700">Checked In</span>
-        </div>
-
-        {/* Time */}
-        <div className="hidden text-sm font-medium text-gray-600 sm:block">
-          09:15 AM
-        </div>
+        {/* Attendance status / check-in systat */}
+        <AttendanceStatusPill />
 
         {/* Divider */}
         <div className="hidden h-6 w-px bg-gray-200 sm:block" />
