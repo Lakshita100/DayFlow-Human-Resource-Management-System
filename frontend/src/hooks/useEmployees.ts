@@ -68,3 +68,16 @@ export function useUpdateEmployeeStatus() {
     },
   });
 }
+
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      employeeApi.uploadEmployeeAvatar(id, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employees', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['employees', 'me'] });
+    },
+  });
+}

@@ -3,10 +3,10 @@ import PageContainer from '@/components/layout/PageContainer';
 import CalendarToolbar from '@/components/calendar/CalendarToolbar';
 import CalendarGrid from '@/components/calendar/CalendarGrid';
 import EventDetail from '@/components/calendar/EventDetail';
-import { useCalendarEventsMock } from '@/hooks/useCalendar';
+import { useCalendarEvents } from '@/hooks/useCalendar';
 import type { CalendarEvent, CalendarViewMode } from '@/types/calendar.types';
 import EmptyState from '@/components/ui/EmptyState';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 
 export default function EmployeeCalendarPage() {
   const now = new Date();
@@ -17,7 +17,8 @@ export default function EmployeeCalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEventOpen, setIsEventOpen] = useState(false);
 
-  const events = useCalendarEventsMock(year, month);
+  const { data: liveEvents, isLoading } = useCalendarEvents(year, month + 1);
+  const events = useMemo(() => liveEvents ?? [], [liveEvents]);
 
   const handlePrev = useCallback(() => {
     setMonth((m) => {
@@ -87,8 +88,15 @@ export default function EmployeeCalendarPage() {
           onToday={handleToday}
         />
 
+        {/* Loading Spinner */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+          </div>
+        )}
+
         {/* Content */}
-        {viewMode === 'month' && (
+        {!isLoading && viewMode === 'month' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
             <div className="lg:col-span-3">
               <CalendarGrid
@@ -149,7 +157,7 @@ export default function EmployeeCalendarPage() {
           </div>
         )}
 
-        {viewMode === 'week' && (
+        {!isLoading && viewMode === 'week' && (
           <div className="rounded-xl border border-gray-100 bg-white shadow-card overflow-hidden">
             <div className="grid grid-cols-7">
               {(() => {
@@ -194,7 +202,7 @@ export default function EmployeeCalendarPage() {
           </div>
         )}
 
-        {viewMode === 'list' && (
+        {!isLoading && viewMode === 'list' && (
           <div className="space-y-4">
             {groupedEvents.length === 0 ? (
               <EmptyState

@@ -7,6 +7,7 @@ import attendanceRoutes from './attendance.routes.js';
 import leaveRoutes from './leave.routes.js';
 import documentRoutes from './document.routes.js';
 import notificationRoutes from './notification.routes.js';
+import calendarRoutes from './calendar.routes.js';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/attendance', attendanceRoutes);
 router.use('/leave', leaveRoutes);
 router.use('/documents', documentRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/calendar', calendarRoutes);
 
 export default router;
