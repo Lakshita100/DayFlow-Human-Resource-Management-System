@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Zap,
   ChevronLeft,
   ChevronRight,
   X,
+  LogOut,
 } from 'lucide-react';
 import NavigationItem from './NavigationItem';
 import {
@@ -12,18 +13,45 @@ import {
   adminNavigation,
   type NavGroup,
 } from '@/types/navigation.types';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   mobileOpen: boolean;
   onClose: () => void;
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function getRoleLabel(role: string): string {
+  if (role === 'ADMIN') return 'Administrator';
+  if (role === 'HR') return 'HR Manager';
+  return 'Employee';
+}
+
 export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const isAdminRoute = location.pathname.startsWith('/admin');
   const navigation: NavGroup[] = isAdminRoute ? adminNavigation : employeeNavigation;
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
+
+  const initials = user ? getInitials(user.name) : 'U';
+  const displayName = user?.name ?? 'User';
+  const roleLabel = user ? getRoleLabel(user.role) : '';
 
   const sidebarContent = (
     <div className="flex h-full flex-col bg-white">
@@ -55,30 +83,15 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* Role Toggle */}
+      {/* Role Badge */}
       {!collapsed && (
         <div className="px-3 pt-4 pb-2">
-          <div className="flex rounded-lg bg-gray-50 p-0.5">
-            <Link
-              to="/employee/dashboard"
-              className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-medium transition-colors ${
-                !isAdminRoute
-                  ? 'bg-white text-brand-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Employee
-            </Link>
-            <Link
-              to="/admin/dashboard"
-              className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-medium transition-colors ${
-                isAdminRoute
-                  ? 'bg-white text-brand-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Admin
-            </Link>
+          <div className={`rounded-lg px-3 py-2 text-xs font-medium ${
+            isAdminRoute
+              ? 'bg-brand-50 text-brand-700'
+              : 'bg-blue-50 text-blue-700'
+          }`}>
+            {isAdminRoute ? 'Admin Panel' : 'Employee Portal'}
           </div>
         </div>
       )}
@@ -106,12 +119,19 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         <div className="border-t border-gray-100 p-3">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
-              RS
+              {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-gray-900">Rahul Sharma</p>
-              <p className="truncate text-xs text-gray-500">Employee</p>
+              <p className="truncate text-sm font-medium text-gray-900">{displayName}</p>
+              <p className="truncate text-xs text-gray-500">{roleLabel}</p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       )}
