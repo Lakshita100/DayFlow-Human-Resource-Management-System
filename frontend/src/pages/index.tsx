@@ -20,6 +20,9 @@ import NotificationsPreview from '@/components/dashboard/NotificationsPreview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { mockDashboardSummary } from '@/data/mockDashboard';
 import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
+import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
+import EmployeeSalaryPage from '@/pages/EmployeeSalaryPage';
+import EmployeeDocumentsPage from '@/pages/EmployeeDocumentsPage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -213,7 +216,7 @@ export function AdminAttendance() {
 }
 
 export function LeavePage() {
-  return <PlaceholderPage title="Leave" icon="📅" />;
+  return <EmployeeLeavePage />;
 }
 
 export function AdminTimeOff() {
@@ -221,7 +224,7 @@ export function AdminTimeOff() {
 }
 
 export function SalaryPage() {
-  return <PlaceholderPage title="My Salary" icon="💰" />;
+  return <EmployeeSalaryPage />;
 }
 
 export function AdminPayroll() {
@@ -233,7 +236,7 @@ export function EmployeeListPage() {
 }
 
 export function DocumentsPage() {
-  return <PlaceholderPage title="Documents" icon="📄" />;
+  return <EmployeeDocumentsPage />;
 }
 
 export function NotificationsPage() {

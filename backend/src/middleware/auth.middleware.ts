@@ -38,8 +38,10 @@ export async function requireAuth(
 
     req.user = {
       id: user.id,
+      loginId: user.loginId,
       email: user.email,
       role: user.role,
+      companyId: user.companyId,
       mustChangePassword: user.mustChangePassword,
     };
 
