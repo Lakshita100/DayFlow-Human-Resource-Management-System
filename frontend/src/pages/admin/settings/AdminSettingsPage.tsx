@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Avatar from '@/components/ui/Avatar';
 import ChangePhotoModal from '../profile/ChangePhotoModal';
 import { mockAdminProfile } from '@/data/adminProfileMock';
+import { useUploadAvatar } from '@/hooks/useEmployees';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -22,8 +23,10 @@ export default function AdminSettingsPage() {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(mockAdminProfile.avatar);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
-  const [savingPhoto, setSavingPhoto] = useState(false);
+
+  const uploadAvatarMutation = useUploadAvatar();
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -62,27 +65,38 @@ export default function AdminSettingsPage() {
       setToast({ type: 'error', message: 'Image must be smaller than 5 MB.' });
       return;
     }
+    setSelectedFile(file);
     setPendingUrl(URL.createObjectURL(file));
     setPhotoModalOpen(true);
   }, []);
 
   const handleSavePhoto = useCallback(() => {
-    if (!pendingUrl) return;
-    setSavingPhoto(true);
-    setTimeout(() => {
-      URL.revokeObjectURL(pendingUrl);
-      setAvatarUrl(pendingUrl);
-      setSavingPhoto(false);
-      setPhotoModalOpen(false);
-      setPendingUrl(null);
-      setToast({ type: 'success', message: 'Profile photo updated successfully.' });
-    }, 800);
-  }, [pendingUrl]);
+    if (!selectedFile || !user) return;
+    const employeeId = (user as any).employeeId || user.id || 'me';
+
+    uploadAvatarMutation.mutate(
+      { id: employeeId, file: selectedFile },
+      {
+        onSuccess: (data) => {
+          if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+          setAvatarUrl(data.avatarUrl);
+          setPhotoModalOpen(false);
+          setPendingUrl(null);
+          setSelectedFile(null);
+          setToast({ type: 'success', message: 'Profile photo uploaded & saved successfully.' });
+        },
+        onError: (err: any) => {
+          setToast({ type: 'error', message: err?.message || 'Failed to upload profile photo.' });
+        },
+      }
+    );
+  }, [selectedFile, user, pendingUrl, uploadAvatarMutation]);
 
   const handleCancelPhoto = useCallback(() => {
     if (pendingUrl) URL.revokeObjectURL(pendingUrl);
     setPhotoModalOpen(false);
     setPendingUrl(null);
+    setSelectedFile(null);
   }, [pendingUrl]);
 
   // Profile save handler
@@ -118,22 +132,23 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
-          {/* Settings Tab Navigation */}
-          <div className="w-full shrink-0 lg:w-56">
-            <nav className="flex gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1.5 shadow-card lg:flex-col scrollbar-none">
+          {/* Navigation Tabs */}
+          <div className="w-full shrink-0 lg:w-64">
+            <nav className="flex flex-row space-x-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-2 shadow-card lg:flex-col lg:space-x-0 lg:space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const active = activeTab === tab.key;
                 return (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2.5 shrink-0 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                      activeTab === tab.key
-                        ? 'bg-brand-50 text-brand-700 font-semibold'
-                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                    className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap lg:w-full ${
+                      active
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon size={18} />
+                    <Icon size={18} className={active ? 'text-brand-600' : 'text-gray-400'} />
                     {tab.label}
                   </button>
                 );
@@ -141,211 +156,216 @@ export default function AdminSettingsPage() {
             </nav>
           </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 min-w-0">
-            {/* PROFILE TAB */}
+          {/* Tab Contents */}
+          <div className="flex-1">
             {activeTab === 'profile' && (
-              <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
-                <h3 className="mb-6 text-base font-semibold text-gray-900">Profile Information</h3>
+              <div className="space-y-6">
+                {/* Profile Photo Card */}
+                <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
+                  <h2 className="text-base font-semibold text-gray-900">Profile Photo</h2>
+                  <p className="mt-0.5 text-sm text-gray-500">This photo will be displayed across your account.</p>
 
-                {/* Avatar & Photo Upload Section */}
-                <div className="flex flex-col sm:flex-row items-center gap-5 mb-8 pb-6 border-b border-gray-100 text-center sm:text-left">
-                  <div className="relative group shrink-0">
-                    <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+                  <div className="mt-6 flex flex-col items-center sm:flex-row sm:items-start gap-6">
+                    <div className="relative group">
                       <Avatar
                         src={avatarUrl}
                         name={formData.name}
-                        className="h-full w-full text-xl sm:text-2xl"
+                        className="h-24 w-24 text-2xl font-bold shadow-md"
                       />
-                      {/* Change photo overlay button */}
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        aria-label="Change profile photo"
-                        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brand-600 text-white shadow-md transition-colors hover:bg-brand-700"
+                        className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                        title="Upload new photo"
                       >
-                        <Camera size={14} />
+                        <Camera size={16} />
                       </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      aria-hidden="true"
-                      tabIndex={-1}
-                    />
-                  </div>
 
-                  <div>
-                    <h4 className="text-lg font-bold text-gray-900">{formData.name}</h4>
-                    <p className="text-xs text-gray-500 font-mono mt-0.5">
-                      {user?.loginId || user?.employeeId || mockAdminProfile.loginId} &middot; {user?.role || 'ADMIN'}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-400">
-                      Allowed JPG, PNG, or WEBP. Max size of 5 MB.
-                    </p>
+                    <div className="text-center sm:text-left">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 shadow-xs transition-colors hover:bg-gray-50"
+                        >
+                          Upload Photo
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-400">
+                        Supports JPG, PNG or WEBP up to 5MB.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Profile Form Grid */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Full Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Login / Employee ID</label>
-                    <input
-                      type="text"
-                      value={user?.loginId || user?.employeeId || mockAdminProfile.loginId}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 font-mono cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Email Address</label>
-                    <input
-                      type="email"
-                      value={user?.email ?? mockAdminProfile.email}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Mobile Number</label>
-                    <input
-                      type="text"
-                      value={formData.mobile}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, mobile: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Company</label>
-                    <input
-                      type="text"
-                      value={user?.company?.name ?? mockAdminProfile.company}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Department</label>
-                    <input
-                      type="text"
-                      value={mockAdminProfile.department}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Manager</label>
-                    <input
-                      type="text"
-                      value={mockAdminProfile.manager ?? 'N/A'}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">Office Location</label>
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-60"
-                  >
-                    {savingProfile ? (
-                      <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* SECURITY TAB */}
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
-                  <h3 className="mb-4 text-base font-semibold text-gray-900">Change Password</h3>
-                  <div className="space-y-4 max-w-md">
+                {/* Profile Information Form */}
+                <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
+                  <div className="flex items-center justify-between border-b border-gray-50 pb-4">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-500">Current Password</label>
-                      <input type="password" placeholder="Enter current password" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100" />
+                      <h2 className="text-base font-semibold text-gray-900">Profile Information</h2>
+                      <p className="mt-0.5 text-sm text-gray-500">View and update your personal details.</p>
                     </div>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-500">New Password</label>
-                      <input type="password" placeholder="Enter new password" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100" />
+                      <label className="block text-xs font-medium text-gray-700">Full Name</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                      />
                     </div>
+
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-500">Confirm New Password</label>
-                      <input type="password" placeholder="Confirm new password" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100" />
+                      <label className="block text-xs font-medium text-gray-700">Employee ID</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={mockAdminProfile.loginId}
+                        className="mt-1 w-full rounded-lg border border-gray-150 bg-gray-50 px-3.5 py-2 text-sm text-gray-500 font-mono cursor-not-allowed"
+                      />
                     </div>
-                    <button onClick={handleSecuritySave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
-                      <Shield size={16} />
-                      {securitySaved ? 'Updated!' : 'Update Password'}
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Email Address</label>
+                      <input
+                        type="email"
+                        disabled
+                        value={user?.email ?? mockAdminProfile.email}
+                        className="mt-1 w-full rounded-lg border border-gray-150 bg-gray-50 px-3.5 py-2 text-sm text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Mobile Number</label>
+                      <input
+                        type="text"
+                        value={formData.mobile}
+                        onChange={(e) => setFormData((p) => ({ ...p, mobile: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Company</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={mockAdminProfile.company}
+                        className="mt-1 w-full rounded-lg border border-gray-150 bg-gray-50 px-3.5 py-2 text-sm text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Department</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={mockAdminProfile.department}
+                        className="mt-1 w-full rounded-lg border border-gray-150 bg-gray-50 px-3.5 py-2 text-sm text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Manager</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={mockAdminProfile.manager ?? 'System Administrator'}
+                        className="mt-1 w-full rounded-lg border border-gray-150 bg-gray-50 px-3.5 py-2 text-sm text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700">Location</label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={savingProfile}
+                      className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+                    >
+                      <Save size={16} />
+                      {savingProfile ? 'Saving...' : 'Save Profile'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* NOTIFICATIONS TAB */}
-            {activeTab === 'notifications' && (
-              <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
-                <h3 className="mb-4 text-base font-semibold text-gray-900">Notification Preferences</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Leave Requests', desc: 'Get notified when employees submit leave requests', default: true },
-                    { label: 'Attendance Alerts', desc: 'Get notified about attendance irregularities', default: true },
-                    { label: 'Payroll Updates', desc: 'Get notified about payroll processing', default: false },
-                    { label: 'New Employee', desc: 'Get notified when a new employee is added', default: true },
-                    { label: 'System Updates', desc: 'Get notified about system changes', default: false },
-                  ].map((pref) => (
-                    <div key={pref.label} className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 p-3.5 sm:p-4">
-                      <div className="min-w-0 pr-2">
-                        <p className="text-sm font-medium text-gray-900">{pref.label}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{pref.desc}</p>
-                      </div>
-                      <label className="relative inline-flex cursor-pointer items-center shrink-0">
-                        <input type="checkbox" defaultChecked={pref.default} className="peer sr-only" />
-                        <div className="h-5 w-9 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-full" />
-                      </label>
-                    </div>
-                  ))}
+            {activeTab === 'security' && (
+              <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
+                <h2 className="text-base font-semibold text-gray-900">Security Settings</h2>
+                <p className="mt-0.5 text-sm text-gray-500">Manage password and security options.</p>
+
+                <div className="mt-6 space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">Current Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">New Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">Confirm New Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSecuritySave}
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                  >
+                    <Save size={16} />
+                    {securitySaved ? 'Updated!' : 'Update Password'}
+                  </button>
                 </div>
-                <div className="mt-6 flex justify-end">
-                  <button onClick={handleNotifSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
+              </div>
+            )}
+
+            {activeTab === 'notifications' && (
+              <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
+                <h2 className="text-base font-semibold text-gray-900">Notification Preferences</h2>
+                <p className="mt-0.5 text-sm text-gray-500">Choose when and how you get notified.</p>
+
+                <div className="mt-6 space-y-4">
+                  {['Email notifications for leave requests', 'Email notifications for payroll updates', 'Browser push notifications', 'System alerts'].map((pref, i) => (
+                    <label key={i} className="flex items-center gap-3">
+                      <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                      <span className="text-sm text-gray-700">{pref}</span>
+                    </label>
+                  ))}
+                  <button
+                    onClick={handleNotifSave}
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 mt-4"
+                  >
                     <Save size={16} />
                     {notifSaved ? 'Saved!' : 'Save Preferences'}
                   </button>
@@ -353,78 +373,56 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* APPEARANCE TAB */}
             {activeTab === 'appearance' && (
-              <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-card">
-                <h3 className="mb-4 text-base font-semibold text-gray-900">Appearance Settings</h3>
-                <div className="space-y-6">
+              <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
+                <h2 className="text-base font-semibold text-gray-900">Appearance</h2>
+                <p className="mt-0.5 text-sm text-gray-500">Customize theme and display settings.</p>
+
+                <div className="mt-6 space-y-4 max-w-md">
                   <div>
-                    <label className="mb-2 block text-xs font-medium text-gray-500">Theme</label>
-                    <div className="flex flex-wrap gap-2.5">
-                      {['Light', 'Dark', 'System'].map((theme) => (
-                        <button
-                          key={theme}
-                          className={`flex-1 sm:flex-none rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
-                            theme === 'Light'
-                              ? 'border-brand-300 bg-brand-50 text-brand-700 font-semibold'
-                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {theme}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-xs font-medium text-gray-700">Theme</label>
+                    <select className="mt-1 w-full rounded-lg border border-gray-200 px-3.5 py-2 text-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100">
+                      <option>System Default</option>
+                      <option>Light</option>
+                      <option>Dark</option>
+                    </select>
                   </div>
-                  <div>
-                    <label className="mb-2 block text-xs font-medium text-gray-500">Sidebar</label>
-                    <div className="flex flex-wrap gap-2.5">
-                      {['Expanded', 'Collapsed'].map((s) => (
-                        <button
-                          key={s}
-                          className={`flex-1 sm:flex-none rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
-                            s === 'Expanded'
-                              ? 'border-brand-300 bg-brand-50 text-brand-700 font-semibold'
-                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end">
-                  <button onClick={handleAppSave} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700">
+                  <button
+                    onClick={handleAppSave}
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                  >
                     <Save size={16} />
-                    {appSaved ? 'Saved!' : 'Save Settings'}
+                    {appSaved ? 'Saved!' : 'Save Appearance'}
                   </button>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Change Photo Confirmation Modal */}
+        <ChangePhotoModal
+          open={photoModalOpen}
+          imageUrl={pendingUrl || ''}
+          saving={uploadAvatarMutation.isPending}
+          onSave={handleSavePhoto}
+          onCancel={handleCancelPhoto}
+        />
+
+        {/* Toast Notification */}
+        {toast && (
+          <div
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium shadow-xl transition-all ${
+              toast.type === 'success'
+                ? 'bg-emerald-800 text-white'
+                : 'bg-rose-800 text-white'
+            }`}
+          >
+            {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            <span>{toast.message}</span>
+          </div>
+        )}
       </div>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-2.5 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2">
-          {toast.type === 'success' ? (
-            <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
-          ) : (
-            <AlertCircle size={18} className="shrink-0 text-rose-500" />
-          )}
-          <p className="text-sm text-gray-700 font-medium">{toast.message}</p>
-        </div>
-      )}
-
-      {/* Change Photo Preview Modal */}
-      <ChangePhotoModal
-        open={photoModalOpen}
-        imageUrl={pendingUrl ?? ''}
-        saving={savingPhoto}
-        onCancel={handleCancelPhoto}
-        onSave={handleSavePhoto}
-      />
     </PageContainer>
   );
 }
