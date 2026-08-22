@@ -20,6 +20,7 @@ import NotificationsPreview from '@/components/dashboard/NotificationsPreview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { mockDashboardSummary } from '@/data/mockDashboard';
 import EmployeeAttendancePage from '@/pages/EmployeeAttendancePage';
+import EmployeeLeavePage from '@/pages/EmployeeLeavePage';
 
 interface PlaceholderPageProps {
   title: string;
@@ -213,7 +214,7 @@ export function AdminAttendance() {
 }
 
 export function LeavePage() {
-  return <PlaceholderPage title="Leave" icon="📅" />;
+  return <EmployeeLeavePage />;
 }
 
 export function AdminTimeOff() {
