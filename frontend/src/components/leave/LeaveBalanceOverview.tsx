@@ -10,15 +10,15 @@ const SEGMENT_COLORS: Record<string, string> = {
 export default function LeaveBalanceOverview() {
   const data = useLeaveBalanceMock();
 
-  const chartData = data.balances.map((b) => ({
+  const chartData = data.balances.map((b: any) => ({
     name: b.label,
     value: b.available,
     color: SEGMENT_COLORS[b.type] ?? b.color,
   }));
 
-  const totalUsed = data.balances.reduce((sum, b) => sum + b.used, 0);
-  const totalPending = data.balances.reduce((sum, b) => sum + b.pending, 0);
-  const totalAvailable = data.balances.reduce((sum, b) => sum + b.available, 0);
+  const totalUsed = data.balances.reduce((sum: number, b: any) => sum + b.used, 0);
+  const totalPending = data.balances.reduce((sum: number, b: any) => sum + b.pending, 0);
+  const totalAvailable = data.balances.reduce((sum: number, b: any) => sum + b.available, 0);
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
@@ -41,7 +41,7 @@ export default function LeaveBalanceOverview() {
                 dataKey="value"
                 strokeWidth={0}
               >
-                {chartData.map((entry, index) => (
+                {chartData.map((entry: any, index: number) => (
                   <Cell key={index} fill={entry.color} />
                 ))}
               </Pie>
@@ -76,7 +76,7 @@ export default function LeaveBalanceOverview() {
 
         {/* Breakdown list */}
         <div className="flex-1 space-y-3">
-          {data.balances.map((balance) => (
+          {data.balances.map((balance: any) => (
             <div key={balance.type} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span

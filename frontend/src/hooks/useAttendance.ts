@@ -3,25 +3,22 @@ import * as attendanceApi from '@/services/attendance.service';
 import { getMockAttendancePage, mockTodayAttendance, mockMonthlyOverview, mockAttendanceTrend } from '@/data/mockAttendance';
 import type { AttendanceQueryParams, AttendancePaginatedResponse, TodayAttendance, MonthlyOverview, AttendanceTrend } from '@/types/attendance.types';
 
-const USE_MOCK = true;
-
 export function useTodayAttendance() {
   return useQuery<TodayAttendance>({
     queryKey: ['attendance', 'today'],
     queryFn: () => attendanceApi.getTodayAttendance(),
-    enabled: !USE_MOCK,
   });
 }
 
 export function useTodayAttendanceMock(): TodayAttendance {
-  return mockTodayAttendance;
+  const query = useTodayAttendance();
+  return query.data ?? mockTodayAttendance;
 }
 
 export function useMonthlyOverview(month: number, year: number) {
   return useQuery<MonthlyOverview>({
     queryKey: ['attendance', 'monthly-overview', month, year],
     queryFn: () => attendanceApi.getMonthlyOverview(month, year),
-    enabled: !USE_MOCK,
   });
 }
 
@@ -33,7 +30,6 @@ export function useAttendanceTrend() {
   return useQuery<AttendanceTrend>({
     queryKey: ['attendance', 'trend'],
     queryFn: () => attendanceApi.getAttendanceTrend(),
-    enabled: !USE_MOCK,
   });
 }
 
@@ -45,12 +41,12 @@ export function useAttendanceRecords(params: AttendanceQueryParams) {
   return useQuery<AttendancePaginatedResponse>({
     queryKey: ['attendance', 'records', params],
     queryFn: () => attendanceApi.getAttendanceRecords(params),
-    enabled: !USE_MOCK,
   });
 }
 
-export function useAttendanceRecordsMock(params: AttendanceQueryParams) {
-  return getMockAttendancePage(params.page, params.limit, params.month, params.year, params.status);
+export function useAttendanceRecordsMock(params: AttendanceQueryParams): AttendancePaginatedResponse {
+  const query = useAttendanceRecords(params);
+  return query.data ?? getMockAttendancePage(params.page, params.limit, params.month, params.year, params.status);
 }
 
 export function useCheckIn() {
@@ -59,6 +55,7 @@ export function useCheckIn() {
     mutationFn: () => attendanceApi.checkIn(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance', 'records'] });
     },
   });
 }
@@ -69,6 +66,7 @@ export function useCheckOut() {
     mutationFn: () => attendanceApi.checkOut(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance', 'records'] });
     },
   });
 }

@@ -8,25 +8,23 @@ import {
 } from '@/data/mockDocuments';
 import type { DocumentRecord } from '@/types/document.types';
 
-const USE_MOCK = true;
-
 export function useDocuments() {
   return useQuery<DocumentRecord[]>({
     queryKey: ['documents'],
     queryFn: () => documentApi.getDocuments(),
-    enabled: !USE_MOCK,
   });
 }
 
 export function useDocumentsMock(): DocumentRecord[] {
-  return getMockDocuments();
+  const query = useDocuments();
+  return query.data ?? getMockDocuments();
 }
 
 export function useDocumentById(id: string) {
   return useQuery<DocumentRecord>({
     queryKey: ['documents', id],
     queryFn: () => documentApi.getDocumentById(id),
-    enabled: !USE_MOCK && !!id,
+    enabled: !!id,
   });
 }
 
@@ -49,12 +47,12 @@ export function useDocumentStats() {
       }).length;
       return { total, verified, pending, expiringSoon };
     },
-    enabled: !USE_MOCK,
   });
 }
 
 export function useDocumentStatsMock() {
-  return getMockDocumentStats();
+  const query = useDocumentStats();
+  return query.data ?? getMockDocumentStats();
 }
 
 export function useDocumentCategories() {
@@ -70,18 +68,18 @@ export function useDocumentCategories() {
         count: docs.filter((d) => d.category === key).length,
       }));
     },
-    enabled: !USE_MOCK,
   });
 }
 
 export function useDocumentCategoriesMock() {
-  return getMockDocumentCategories();
+  const query = useDocumentCategories();
+  return query.data ?? getMockDocumentCategories();
 }
 
 export function useUploadDocument() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: FormData) => documentApi.uploadDocument(formData),
+    mutationFn: (payload: any) => documentApi.uploadDocument(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     },
