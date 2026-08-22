@@ -2,23 +2,41 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useLeaveBalanceMock } from "@/hooks/useLeave";
 
 const SEGMENT_COLORS: Record<string, string> = {
+  PAID: "#7c3aed",
   paid: "#7c3aed",
+  SICK: "#f59e0b",
   sick: "#f59e0b",
+  UNPAID: "#6b7280",
   unpaid: "#6b7280",
 };
 
 export default function LeaveBalanceOverview() {
   const data = useLeaveBalanceMock();
 
-  const chartData = data.balances.map((b: any) => ({
-    name: b.label,
-    value: b.available,
-    color: SEGMENT_COLORS[b.type] ?? b.color,
-  }));
+  const balances: any[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as any)?.balances)
+    ? (data as any).balances
+    : Array.isArray((data as any)?.allocations)
+    ? (data as any).allocations
+    : [];
 
-  const totalUsed = data.balances.reduce((sum: number, b: any) => sum + b.used, 0);
-  const totalPending = data.balances.reduce((sum: number, b: any) => sum + b.pending, 0);
-  const totalAvailable = data.balances.reduce((sum: number, b: any) => sum + b.available, 0);
+  const chartData = balances.map((b: any) => {
+    const typeKey = (b.type || '').toString().toLowerCase();
+    const uppercaseType = (b.type || '').toString().toUpperCase();
+    return {
+      name: b.label || `${b.type || 'Leave'} Leave`,
+      value: b.available ?? Math.max(0, (b.total ?? 0) - (b.used ?? 0)),
+      color: SEGMENT_COLORS[uppercaseType] ?? SEGMENT_COLORS[typeKey] ?? b.color ?? "#3b82f6",
+    };
+  });
+
+  const totalUsed = balances.reduce((sum: number, b: any) => sum + (b.used ?? 0), 0);
+  const totalPending = balances.reduce((sum: number, b: any) => sum + (b.pending ?? 0), 0);
+  const totalAvailable = balances.reduce(
+    (sum: number, b: any) => sum + (b.available ?? Math.max(0, (b.total ?? 0) - (b.used ?? 0))),
+    0
+  );
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-card">
@@ -76,20 +94,27 @@ export default function LeaveBalanceOverview() {
 
         {/* Breakdown list */}
         <div className="flex-1 space-y-3">
-          {data.balances.map((balance: any) => (
-            <div key={balance.type} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: balance.color }}
-                />
-                <span className="text-sm text-gray-700">{balance.label}</span>
+          {balances.map((balance: any, idx: number) => {
+            const typeKey = (balance.type || '').toString().toLowerCase();
+            const uppercaseType = (balance.type || '').toString().toUpperCase();
+            const color = SEGMENT_COLORS[uppercaseType] ?? SEGMENT_COLORS[typeKey] ?? balance.color ?? "#3b82f6";
+            return (
+              <div key={balance.type || idx} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-sm text-gray-700">
+                    {balance.label || `${balance.type || 'Leave'} Leave`}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {balance.used ?? 0} / {balance.total ?? 0} days
+                </span>
               </div>
-              <span className="text-sm text-gray-500">
-                {balance.used} / {balance.total} days
-              </span>
-            </div>
-          ))}
+            );
+          })}
 
           <div className="border-t border-gray-100 pt-3" />
 
