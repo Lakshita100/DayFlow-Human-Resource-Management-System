@@ -3,16 +3,23 @@ import { Role } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-development-only-12345';
 
-export function generateTestToken(payload: {
-  userId: string;
+interface TokenPayload {
+  userId?: string;
+  id?: string;
   email: string;
   role: Role;
   loginId?: string;
   companyId?: string | null;
-}): string {
+}
+
+function resolveUserId(payload: TokenPayload): string {
+  return payload.userId ?? payload.id ?? '';
+}
+
+export function generateTestToken(payload: TokenPayload): string {
   return jwt.sign(
     {
-      userId: payload.userId,
+      userId: resolveUserId(payload),
       email: payload.email,
       role: payload.role,
       loginId: payload.loginId || '',
@@ -23,16 +30,10 @@ export function generateTestToken(payload: {
   );
 }
 
-export function generateExpiredToken(payload: {
-  userId: string;
-  email: string;
-  role: Role;
-  loginId?: string;
-  companyId?: string | null;
-}): string {
+export function generateExpiredToken(payload: TokenPayload): string {
   return jwt.sign(
     {
-      userId: payload.userId,
+      userId: resolveUserId(payload),
       email: payload.email,
       role: payload.role,
       loginId: payload.loginId || '',
