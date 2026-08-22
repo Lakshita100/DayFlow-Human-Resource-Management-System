@@ -2,6 +2,9 @@
 node_modules/
 .prisma/
 
+# Private AI engineering documentation
+.ai/
+
 # Build outputs
 dist/
 build/

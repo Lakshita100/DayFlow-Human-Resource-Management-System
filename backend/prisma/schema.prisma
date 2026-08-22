@@ -7,13 +7,225 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Phase 1: Infrastructure verification model
-// This model is used only to verify database connectivity
-// It will be removed or extended in Phase 2 with actual HRMS models
-model SystemCheck {
-  id        Int      @id @default(autoincrement())
-  name      String
-  status    String
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  ADMIN
+  HR
+  EMPLOYEE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+}
+
+enum LeaveType {
+  PAID
+  SICK
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  role               Role     @default(EMPLOYEE)
+  mustChangePassword Boolean  @default(true)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  employee      Employee?
+  notifications Notification[]
+
+  @@index([email])
+}
+
+model Employee {
+  id             String         @id @default(uuid())
+  employeeId     String         @unique
+  userId         String         @unique
+  firstName      String
+  lastName       String
+  phone          String?
+  department     String
+  designation    String
+  dateOfJoining  DateTime
+  employmentType String         @default("FULL_TIME")
+  status         EmployeeStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privateInfo      EmployeePrivateInfo?
+  skills           EmployeeSkill[]
+  documents        EmployeeDocument[]
+  attendance       Attendance[]
+  timeOffRequests  TimeOff[]
+  leaveAllocations LeaveAllocation[]
+  salaryStructure  SalaryStructure?
+
+  @@index([employeeId])
+  @@index([userId])
+}
+
+model EmployeePrivateInfo {
+  id                    String    @id @default(uuid())
+  employeeId            String    @unique
+  dateOfBirth           DateTime?
+  gender                String?
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  category String?
+
+  employeeSkills EmployeeSkill[]
+}
+
+model EmployeeSkill {
+  id          String  @id @default(uuid())
+  employeeId  String
+  skillId     String
+  proficiency String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, skillId])
+}
+
+model EmployeeDocument {
+  id         String   @id @default(uuid())
+  employeeId String
+  name       String
+  type       String
+  fileUrl    String
+  uploadedAt DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  employeeId String
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  workHours  Float?
+  extraHours Float?
+  status     AttendanceStatus @default(ABSENT)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+}
+
+model TimeOff {
+  id         String      @id @default(uuid())
+  employeeId String
+  type       LeaveType
+  startDate  DateTime
+  endDate    DateTime
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  approvedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model LeaveAllocation {
+  id         String    @id @default(uuid())
+  employeeId String
+  type       LeaveType
+  total      Int
+  used       Int       @default(0)
+  year       Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, type, year])
+  @@index([employeeId])
+}
+
+model SalaryStructure {
+  id            String    @id @default(uuid())
+  employeeId    String    @unique
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  components SalaryComponent[]
+}
+
+model SalaryComponent {
+  id                String   @id @default(uuid())
+  salaryStructureId String
+  name              String
+  type              String
+  amount            Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@index([salaryStructureId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
 }
