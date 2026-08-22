@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const TOKEN_KEY = 'dayflow_token';
+
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
@@ -7,10 +9,12 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding auth tokens (future use)
 apiClient.interceptors.request.use(
   (config) => {
-    // Future: Add authorization header here
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -18,11 +22,16 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for handling errors
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Future: Handle 401, 403, etc.
+    if (error.response?.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('dayflow_user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
     return Promise.reject(error);
   }
 );

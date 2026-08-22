@@ -1,8 +1,14 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layout/RootLayout';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import PublicRoute from '@/components/common/PublicRoute';
 import HealthPage from '@/pages/HealthPage';
+import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/auth/LoginPage';
+import SignUpPage from '@/pages/auth/SignUpPage';
+import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
+import UnauthorizedPage from '@/pages/auth/UnauthorizedPage';
 import {
   EmployeeDashboard,
   AdminDashboard,
@@ -22,26 +28,55 @@ import {
 
 export const router = createBrowserRouter([
   {
-    path: '/login',
-    element: <LoginPage />,
+    path: '/',
+    element: (
+      <PublicRoute>
+        <LandingPage />
+      </PublicRoute>
+    ),
   },
   {
-    path: '/',
+    path: '/login',
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/signup',
+    element: (
+      <PublicRoute>
+        <SignUpPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/change-password',
+    element: (
+      <ProtectedRoute>
+        <ChangePasswordPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/unauthorized',
+    element: <UnauthorizedPage />,
+  },
+  {
+    path: '/health',
     element: <RootLayout />,
     children: [
-      {
-        index: true,
-        element: <Navigate to="/employee/dashboard" replace />,
-      },
-      {
-        path: 'health',
-        element: <HealthPage />,
-      },
+      { index: true, element: <HealthPage /> },
     ],
   },
   {
     path: '/employee',
-    element: <DashboardLayout />,
+    element: (
+      <ProtectedRoute allowedRoles={['EMPLOYEE', 'HR', 'ADMIN']}>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: 'dashboard', element: <EmployeeDashboard /> },
       { path: 'profile', element: <ProfilePage /> },
@@ -56,7 +91,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <DashboardLayout />,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'HR']}>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: 'dashboard', element: <AdminDashboard /> },
       { path: 'employees', element: <EmployeeListPage /> },
