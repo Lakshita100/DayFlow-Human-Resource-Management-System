@@ -2,23 +2,24 @@ import apiClient from '@/api/client';
 import type {
   AuthResponse,
   LoginPayload,
-  SignupPayload,
   ChangePasswordPayload,
 } from '@/types/auth.types';
 import type { ApiResponse } from '@/types/common.types';
+
+export async function signup(payload: FormData): Promise<AuthResponse> {
+  const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/signup', payload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  if (!res.data.data) {
+    throw new Error(res.data.message || 'Signup failed');
+  }
+  return res.data.data;
+}
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', payload);
   if (!res.data.data) {
     throw new Error(res.data.message || 'Login failed');
-  }
-  return res.data.data;
-}
-
-export async function signup(payload: SignupPayload): Promise<AuthResponse> {
-  const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/signup', payload);
-  if (!res.data.data) {
-    throw new Error(res.data.message || 'Signup failed');
   }
   return res.data.data;
 }

@@ -9,6 +9,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import SignUpPage from '@/pages/auth/SignUpPage';
 import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
 import UnauthorizedPage from '@/pages/auth/UnauthorizedPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import {
   EmployeeDashboard,
   AdminDashboard,
@@ -105,5 +106,9 @@ export const router = createBrowserRouter([
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ]);

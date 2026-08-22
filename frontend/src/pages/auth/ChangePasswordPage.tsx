@@ -14,14 +14,21 @@ const changePasswordSchema = z
     newPassword: z
       .string()
       .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be 128 characters or less')
       .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
       .regex(/[a-z]/, 'Must contain at least one lowercase letter')
-      .regex(/[0-9]/, 'Must contain at least one number'),
+      .regex(/[0-9]/, 'Must contain at least one number')
+      .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'Must contain at least one special character (!@#$%^&*...)')
+      .refine((val) => !/\s/.test(val), 'Must not contain spaces'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: 'New password must be different from current password',
+    path: ['newPassword'],
   });
 
 type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
@@ -167,7 +174,7 @@ export default function ChangePasswordPage() {
                 <p className="mt-1.5 text-xs text-red-600">{errors.newPassword.message}</p>
               )}
               <p className="mt-1.5 text-xs text-gray-400">
-                Min 8 characters, with uppercase, lowercase, and a number
+                Min 8 characters, uppercase, lowercase, number, and special character
               </p>
             </div>
 
